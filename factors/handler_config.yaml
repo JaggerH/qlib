@@ -1,0 +1,5 @@
+handlers:
+  - module: qlib.contrib.data.loader
+    class: Alpha158DL
+  - module: factors.custom_factors
+    class: CustomFactorDL
