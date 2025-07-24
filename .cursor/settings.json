@@ -1,0 +1,90 @@
+{
+    // 编辑器设置 - 支持持续编辑
+    "editor.autoSave": "afterDelay",
+    "editor.autoSaveDelay": 500,
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true,
+        "source.fixAll": true
+    },
+    "editor.rulers": [
+        88,
+        120
+    ],
+    "editor.wordWrap": "on",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    // Python设置 - 针对conda qlib环境
+    "python.defaultInterpreterPath": "conda run -n qlib python",
+    "python.condaPath": "conda",
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length=88"
+    ],
+    // 代码质量检查
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.lintOnSave": true,
+    "python.linting.maxNumberOfProblems": 50,
+    // 测试配置 - 支持持续测试
+    "python.testing.pytestEnabled": true,
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "python.testing.promptToConfigure": false,
+    "python.testing.pytestArgs": [
+        "tests",
+        "-v",
+        "--tb=short",
+        "--maxfail=3"
+    ],
+    // 文件设置
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 500,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/mlruns": true,
+        "**/.mypy_cache": true
+    },
+    // 终端设置 - conda环境
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.profiles.windows": {
+        "PowerShell (qlib)": {
+            "source": "PowerShell",
+            "args": [
+                "-NoExit",
+                "-Command",
+                "conda activate qlib"
+            ]
+        }
+    },
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "QLIB_DATA_PATH": "${workspaceFolder}/qlib_data"
+    },
+    // 工作区特定设置
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoSearchPaths": true,
+    // Git设置
+    "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    // 搜索优化
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/mlruns": true,
+        "**/.pytest_cache": true
+    },
+    // Jupyter设置
+    "jupyter.askForKernelRestart": false,
+    "jupyter.alwaysTrustNotebooks": true,
+    // 调试设置
+    "debug.onTaskErrors": "showErrors"
+}

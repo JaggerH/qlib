@@ -1,0 +1,6 @@
+stocks: [AAPL, MSFT, GOOGL, AMZN, META, TSLA, NVDA]
+start_date: '2023-01-01'
+end_date: '2024-05-01'
+freq: '1 min'           # 支持 '1min', '5min' 等
+rth_only: true         # 仅下载RTH（常规交易时段）
+timezone: 'US/Eastern' # IBKR数据默认美东时间 
