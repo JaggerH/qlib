@@ -3,3 +3,8 @@ handlers:
     class: Alpha158DL
   - module: factors.custom_factors
     class: CustomFactorDL
+
+corr_params:
+  instruments: ["SH600519"]
+  start_time: "2022-01-01"
+  end_time: "2023-12-31"
