@@ -104,7 +104,7 @@ def check_and_generate_handler_csv(
         return df
 
 
-def compare_factor_corr(factors, factor_csv_path, factor_col="factor", threshold=0.5):
+def compare_factor_corr(factors, factor_csv_path, threshold=0.5):
     # 获取当前脚本所在目录
     script_dir = os.path.dirname(os.path.abspath(__file__))
     cache_dir = os.path.join(script_dir, "cache")
@@ -122,20 +122,26 @@ def compare_factor_corr(factors, factor_csv_path, factor_col="factor", threshold
     factor_df = convert_datetime_index(factor_df)
     handler_df, factor_df = handler_df.align(factor_df, join="inner", axis=0)
 
-    corrs = []
-    for col in handler_df.columns:
-        if handler_df[col].isnull().all():
-            continue
-        corr = handler_df[col].corr(factor_df[factor_col])
-        corrs.append((col, corr))
-    # 按相关性绝对值从大到小排序
-    corrs_sorted = sorted(corrs, key=lambda x: abs(x[1]), reverse=True)
-    # 输出前十
-    for col, corr in corrs_sorted[:10]:
-        if abs(corr) > threshold:
-            print(f"【重点】{col}: 相关性={corr:.3f}")
-        else:
-            print(f"{col}: 相关性={corr:.3f}")
+    # 对每个输入的因子进行分析
+    for input_factor in factor_df.columns:
+        print(f"\n分析因子: {input_factor}")
+        print("-" * 50)
+
+        corrs = []
+        for handler_factor in handler_df.columns:
+            if handler_df[handler_factor].isnull().all():
+                continue
+            corr = handler_df[handler_factor].corr(factor_df[input_factor])
+            corrs.append((handler_factor, corr))
+
+        # 按相关性绝对值从大到小排序
+        corrs_sorted = sorted(corrs, key=lambda x: abs(x[1]), reverse=True)
+        # 输出前十
+        for col, corr in corrs_sorted[:10]:
+            if abs(corr) > threshold:
+                print(f"【重点】{col}: 相关性={corr:.3f}")
+            else:
+                print(f"{col}: 相关性={corr:.3f}")
 
 
 if __name__ == "__main__":
