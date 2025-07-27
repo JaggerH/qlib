@@ -1,0 +1,1376 @@
+- name: KMID
+  qlib_expression: ($close-$open)/$open
+  source: Alpha158
+  description: 中间价相对开盘价的比率，衡量日内价格变动幅度
+  formula: (收盘价 - 开盘价) / 开盘价
+  tags: ["量价类", "日内变动"]
+  metadata: ["$close", "$open"]
+- name: KLEN
+  qlib_expression: ($high-$low)/$open
+  source: Alpha158
+  description: 日内价格波动幅度相对开盘价的比率
+  formula: (最高价 - 最低价) / 开盘价
+  tags: ["量价类", "波动率"]
+  metadata: ["$high", "$low", "$open"]
+- name: KMID2
+  qlib_expression: ($close-$open)/($high-$low+1e-12)
+  source: Alpha158
+  description: 中间价变动相对日内波幅的比率
+  formula: (收盘价 - 开盘价) / (最高价 - 最低价)
+  tags: ["量价类", "日内变动"]
+  metadata: ["$close", "$open", "$high", "$low"]
+- name: KUP
+  qlib_expression: ($high-Greater($open, $close))/$open
+  source: Alpha158
+  description: 上影线长度相对开盘价的比率
+  formula: (最高价 - max(开盘价, 收盘价)) / 开盘价
+  tags: ["量价类", "技术形态"]
+  metadata: ["$high", "$open", "$close"]
+- name: KUP2
+  qlib_expression: ($high-Greater($open, $close))/($high-$low+1e-12)
+  source: Alpha158
+  description: 上影线长度相对日内波幅的比率
+  formula: (最高价 - max(开盘价, 收盘价)) / (最高价 - 最低价)
+  tags: ["量价类", "技术形态"]
+  metadata: ["$high", "$open", "$close", "$low"]
+- name: KLOW
+  qlib_expression: (Less($open, $close)-$low)/$open
+  source: Alpha158
+  description: 下影线长度相对开盘价的比率
+  formula: (min(开盘价, 收盘价) - 最低价) / 开盘价
+  tags: ["量价类", "技术形态"]
+  metadata: ["$open", "$close", "$low"]
+- name: KLOW2
+  qlib_expression: (Less($open, $close)-$low)/($high-$low+1e-12)
+  source: Alpha158
+  description: 下影线长度相对日内波幅的比率
+  formula: (min(开盘价, 收盘价) - 最低价) / (最高价 - 最低价)
+  tags: ["量价类", "技术形态"]
+  metadata: ["$open", "$close", "$low", "$high"]
+- name: KSFT
+  qlib_expression: (2*$close-$high-$low)/$open
+  source: Alpha158
+  description: 收盘价相对高低价中点的偏移，相对开盘价标准化
+  formula: (2×收盘价 - 最高价 - 最低价) / 开盘价
+  tags: ["量价类", "技术形态"]
+  metadata: ["$close", "$high", "$low", "$open"]
+- name: KSFT2
+  qlib_expression: (2*$close-$high-$low)/($high-$low+1e-12)
+  source: Alpha158
+  description: 收盘价相对高低价中点的偏移，相对日内波幅标准化
+  formula: (2×收盘价 - 最高价 - 最低价) / (最高价 - 最低价)
+  tags: ["量价类", "技术形态"]
+  metadata: ["$close", "$high", "$low"]
+- name: OPEN0
+  qlib_expression: $open/$close
+  source: Alpha158
+  description: 开盘价相对收盘价的比率
+  formula: 开盘价 / 收盘价
+  tags: ["量价类", "相对价格"]
+  metadata: ["$open", "$close"]
+- name: HIGH0
+  qlib_expression: $high/$close
+  source: Alpha158
+  description: 最高价相对收盘价的比率
+  formula: 最高价 / 收盘价
+  tags: ["量价类", "相对价格"]
+  metadata: ["$high", "$close"]
+- name: LOW0
+  qlib_expression: $low/$close
+  source: Alpha158
+  description: 最低价相对收盘价的比率
+  formula: 最低价 / 收盘价
+  tags: ["量价类", "相对价格"]
+  metadata: ["$low", "$close"]
+- name: VWAP0
+  qlib_expression: $vwap/$close
+  source: Alpha158
+  description: 成交量加权平均价相对收盘价的比率
+  formula: VWAP / 收盘价
+  tags: ["量价类", "相对价格"]
+  metadata: ["$vwap", "$close"]
+- name: ROC5
+  qlib_expression: Ref($close, 5)/$close
+  source: Alpha158
+  description: 5日前收盘价相对当前收盘价的比率
+  formula: 5日前收盘价 / 当前收盘价
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: ROC10
+  qlib_expression: Ref($close, 10)/$close
+  source: Alpha158
+  description: 10日前收盘价相对当前收盘价的比率
+  formula: 10日前收盘价 / 当前收盘价
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: ROC20
+  qlib_expression: Ref($close, 20)/$close
+  source: Alpha158
+  description: 20日前收盘价相对当前收盘价的比率
+  formula: 20日前收盘价 / 当前收盘价
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: ROC30
+  qlib_expression: Ref($close, 30)/$close
+  source: Alpha158
+  description: 30日前收盘价相对当前收盘价的比率
+  formula: 30日前收盘价 / 当前收盘价
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: ROC60
+  qlib_expression: Ref($close, 60)/$close
+  source: Alpha158
+  description: 60日前收盘价相对当前收盘价的比率
+  formula: 60日前收盘价 / 当前收盘价
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: MA5
+  qlib_expression: Mean($close, 5)/$close
+  source: Alpha158
+  description: 5日移动平均价相对当前收盘价的比率
+  formula: 5日均价 / 当前收盘价
+  tags: ["趋势类", "移动平均"]
+  metadata: ["$close"]
+- name: MA10
+  qlib_expression: Mean($close, 10)/$close
+  source: Alpha158
+  description: 10日移动平均价相对当前收盘价的比率
+  formula: 10日均价 / 当前收盘价
+  tags: ["趋势类", "移动平均"]
+  metadata: ["$close"]
+- name: MA20
+  qlib_expression: Mean($close, 20)/$close
+  source: Alpha158
+  description: 20日移动平均价相对当前收盘价的比率
+  formula: 20日均价 / 当前收盘价
+  tags: ["趋势类", "移动平均"]
+  metadata: ["$close"]
+- name: MA30
+  qlib_expression: Mean($close, 30)/$close
+  source: Alpha158
+  description: 30日移动平均价相对当前收盘价的比率
+  formula: 30日均价 / 当前收盘价
+  tags: ["趋势类", "移动平均"]
+  metadata: ["$close"]
+- name: MA60
+  qlib_expression: Mean($close, 60)/$close
+  source: Alpha158
+  description: 60日移动平均价相对当前收盘价的比率
+  formula: 60日均价 / 当前收盘价
+  tags: ["趋势类", "移动平均"]
+  metadata: ["$close"]
+- name: STD5
+  qlib_expression: Std($close, 5)/$close
+  source: Alpha158
+  description: 5日收盘价标准差相对当前收盘价的比率
+  formula: 5日收盘价标准差 / 当前收盘价
+  tags: ["波动率类", "价格波动"]
+  metadata: ["$close"]
+- name: STD10
+  qlib_expression: Std($close, 10)/$close
+  source: Alpha158
+  description: 10日收盘价标准差相对当前收盘价的比率
+  formula: 10日收盘价标准差 / 当前收盘价
+  tags: ["波动率类", "价格波动"]
+  metadata: ["$close"]
+- name: STD20
+  qlib_expression: Std($close, 20)/$close
+  source: Alpha158
+  description: 20日收盘价标准差相对当前收盘价的比率
+  formula: 20日收盘价标准差 / 当前收盘价
+  tags: ["波动率类", "价格波动"]
+  metadata: ["$close"]
+- name: STD30
+  qlib_expression: Std($close, 30)/$close
+  source: Alpha158
+  description: 30日收盘价标准差相对当前收盘价的比率
+  formula: 30日收盘价标准差 / 当前收盘价
+  tags: ["波动率类", "价格波动"]
+  metadata: ["$close"]
+- name: STD60
+  qlib_expression: Std($close, 60)/$close
+  source: Alpha158
+  description: 60日收盘价标准差相对当前收盘价的比率
+  formula: 60日收盘价标准差 / 当前收盘价
+  tags: ["波动率类", "价格波动"]
+  metadata: ["$close"]
+- name: BETA5
+  qlib_expression: Slope($close, 5)/$close
+  source: Alpha158
+  description: 5日收盘价线性回归斜率相对当前收盘价的比率
+  formula: 5日价格回归斜率 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: BETA10
+  qlib_expression: Slope($close, 10)/$close
+  source: Alpha158
+  description: 10日收盘价线性回归斜率相对当前收盘价的比率
+  formula: 10日价格回归斜率 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: BETA20
+  qlib_expression: Slope($close, 20)/$close
+  source: Alpha158
+  description: 20日收盘价线性回归斜率相对当前收盘价的比率
+  formula: 20日价格回归斜率 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: BETA30
+  qlib_expression: Slope($close, 30)/$close
+  source: Alpha158
+  description: 30日收盘价线性回归斜率相对当前收盘价的比率
+  formula: 30日价格回归斜率 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: BETA60
+  qlib_expression: Slope($close, 60)/$close
+  source: Alpha158
+  description: 60日收盘价线性回归斜率相对当前收盘价的比率
+  formula: 60日价格回归斜率 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RSQR5
+  qlib_expression: Rsquare($close, 5)
+  source: Alpha158
+  description: 5日收盘价线性回归的R平方值
+  formula: 5日价格回归R²
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RSQR10
+  qlib_expression: Rsquare($close, 10)
+  source: Alpha158
+  description: 10日收盘价线性回归的R平方值
+  formula: 10日价格回归R²
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RSQR20
+  qlib_expression: Rsquare($close, 20)
+  source: Alpha158
+  description: 20日收盘价线性回归的R平方值
+  formula: 20日价格回归R²
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RSQR30
+  qlib_expression: Rsquare($close, 30)
+  source: Alpha158
+  description: 30日收盘价线性回归的R平方值
+  formula: 30日价格回归R²
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RSQR60
+  qlib_expression: Rsquare($close, 60)
+  source: Alpha158
+  description: 60日收盘价线性回归的R平方值
+  formula: 60日价格回归R²
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RESI5
+  qlib_expression: Resi($close, 5)/$close
+  source: Alpha158
+  description: 5日收盘价线性回归残差相对当前收盘价的比率
+  formula: 5日价格回归残差 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RESI10
+  qlib_expression: Resi($close, 10)/$close
+  source: Alpha158
+  description: 10日收盘价线性回归残差相对当前收盘价的比率
+  formula: 10日价格回归残差 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RESI20
+  qlib_expression: Resi($close, 20)/$close
+  source: Alpha158
+  description: 20日收盘价线性回归残差相对当前收盘价的比率
+  formula: 20日价格回归残差 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RESI30
+  qlib_expression: Resi($close, 30)/$close
+  source: Alpha158
+  description: 30日收盘价线性回归残差相对当前收盘价的比率
+  formula: 30日价格回归残差 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: RESI60
+  qlib_expression: Resi($close, 60)/$close
+  source: Alpha158
+  description: 60日收盘价线性回归残差相对当前收盘价的比率
+  formula: 60日价格回归残差 / 当前收盘价
+  tags: ["趋势类", "回归分析"]
+  metadata: ["$close"]
+- name: MAX5
+  qlib_expression: Max($high, 5)/$close
+  source: Alpha158
+  description: 5日内最高价相对当前收盘价的比率
+  formula: 5日最高价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$high", "$close"]
+- name: MAX10
+  qlib_expression: Max($high, 10)/$close
+  source: Alpha158
+  description: 10日内最高价相对当前收盘价的比率
+  formula: 10日最高价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$high", "$close"]
+- name: MAX20
+  qlib_expression: Max($high, 20)/$close
+  source: Alpha158
+  description: 20日内最高价相对当前收盘价的比率
+  formula: 20日最高价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$high", "$close"]
+- name: MAX30
+  qlib_expression: Max($high, 30)/$close
+  source: Alpha158
+  description: 30日内最高价相对当前收盘价的比率
+  formula: 30日最高价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$high", "$close"]
+- name: MAX60
+  qlib_expression: Max($high, 60)/$close
+  source: Alpha158
+  description: 60日内最高价相对当前收盘价的比率
+  formula: 60日最高价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$high", "$close"]
+- name: MIN5
+  qlib_expression: Min($low, 5)/$close
+  source: Alpha158
+  description: 5日内最低价相对当前收盘价的比率
+  formula: 5日最低价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$low", "$close"]
+- name: MIN10
+  qlib_expression: Min($low, 10)/$close
+  source: Alpha158
+  description: 10日内最低价相对当前收盘价的比率
+  formula: 10日最低价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$low", "$close"]
+- name: MIN20
+  qlib_expression: Min($low, 20)/$close
+  source: Alpha158
+  description: 20日内最低价相对当前收盘价的比率
+  formula: 20日最低价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$low", "$close"]
+- name: MIN30
+  qlib_expression: Min($low, 30)/$close
+  source: Alpha158
+  description: 30日内最低价相对当前收盘价的比率
+  formula: 30日最低价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$low", "$close"]
+- name: MIN60
+  qlib_expression: Min($low, 60)/$close
+  source: Alpha158
+  description: 60日内最低价相对当前收盘价的比率
+  formula: 60日最低价 / 当前收盘价
+  tags: ["技术指标类", "极值"]
+  metadata: ["$low", "$close"]
+- name: QTLU5
+  qlib_expression: Quantile($close, 5, 0.8)/$close
+  source: Alpha158
+  description: 5日收盘价80%分位数相对当前收盘价的比率
+  formula: 5日收盘价80%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLU10
+  qlib_expression: Quantile($close, 10, 0.8)/$close
+  source: Alpha158
+  description: 10日收盘价80%分位数相对当前收盘价的比率
+  formula: 10日收盘价80%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLU20
+  qlib_expression: Quantile($close, 20, 0.8)/$close
+  source: Alpha158
+  description: 20日收盘价80%分位数相对当前收盘价的比率
+  formula: 20日收盘价80%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLU30
+  qlib_expression: Quantile($close, 30, 0.8)/$close
+  source: Alpha158
+  description: 30日收盘价80%分位数相对当前收盘价的比率
+  formula: 30日收盘价80%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLU60
+  qlib_expression: Quantile($close, 60, 0.8)/$close
+  source: Alpha158
+  description: 60日收盘价80%分位数相对当前收盘价的比率
+  formula: 60日收盘价80%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLD5
+  qlib_expression: Quantile($close, 5, 0.2)/$close
+  source: Alpha158
+  description: 5日收盘价20%分位数相对当前收盘价的比率
+  formula: 5日收盘价20%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLD10
+  qlib_expression: Quantile($close, 10, 0.2)/$close
+  source: Alpha158
+  description: 10日收盘价20%分位数相对当前收盘价的比率
+  formula: 10日收盘价20%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLD20
+  qlib_expression: Quantile($close, 20, 0.2)/$close
+  source: Alpha158
+  description: 20日收盘价20%分位数相对当前收盘价的比率
+  formula: 20日收盘价20%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLD30
+  qlib_expression: Quantile($close, 30, 0.2)/$close
+  source: Alpha158
+  description: 30日收盘价20%分位数相对当前收盘价的比率
+  formula: 30日收盘价20%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: QTLD60
+  qlib_expression: Quantile($close, 60, 0.2)/$close
+  source: Alpha158
+  description: 60日收盘价20%分位数相对当前收盘价的比率
+  formula: 60日收盘价20%分位数 / 当前收盘价
+  tags: ["技术指标类", "分位数"]
+  metadata: ["$close"]
+- name: RANK5
+  qlib_expression: Rank($close, 5)
+  source: Alpha158
+  description: 当前收盘价在过去5日中的排名（归一化）
+  formula: 当前收盘价在5日内的排名 / 5
+  tags: ["技术指标类", "排名"]
+  metadata: ["$close"]
+- name: RANK10
+  qlib_expression: Rank($close, 10)
+  source: Alpha158
+  description: 当前收盘价在过去10日中的排名（归一化）
+  formula: 当前收盘价在10日内的排名 / 10
+  tags: ["技术指标类", "排名"]
+  metadata: ["$close"]
+- name: RANK20
+  qlib_expression: Rank($close, 20)
+  source: Alpha158
+  description: 当前收盘价在过去20日中的排名（归一化）
+  formula: 当前收盘价在20日内的排名 / 20
+  tags: ["技术指标类", "排名"]
+  metadata: ["$close"]
+- name: RANK30
+  qlib_expression: Rank($close, 30)
+  source: Alpha158
+  description: 当前收盘价在过去30日中的排名（归一化）
+  formula: 当前收盘价在30日内的排名 / 30
+  tags: ["技术指标类", "排名"]
+  metadata: ["$close"]
+- name: RANK60
+  qlib_expression: Rank($close, 60)
+  source: Alpha158
+  description: 当前收盘价在过去60日中的排名（归一化）
+  formula: 当前收盘价在60日内的排名 / 60
+  tags: ["技术指标类", "排名"]
+  metadata: ["$close"]
+- name: RSV5
+  qlib_expression: ($close-Min($low, 5))/(Max($high, 5)-Min($low, 5)+1e-12)
+  source: Alpha158
+  description: 5日未成熟随机值，KDJ指标的基础
+  formula: (收盘价 - 5日最低价) / (5日最高价 - 5日最低价)
+  tags: ["技术指标类", "随机振荡器"]
+  metadata: ["$close", "$low", "$high"]
+- name: RSV10
+  qlib_expression: ($close-Min($low, 10))/(Max($high, 10)-Min($low, 10)+1e-12)
+  source: Alpha158
+  description: 10日未成熟随机值，KDJ指标的基础
+  formula: (收盘价 - 10日最低价) / (10日最高价 - 10日最低价)
+  tags: ["技术指标类", "随机振荡器"]
+  metadata: ["$close", "$low", "$high"]
+- name: RSV20
+  qlib_expression: ($close-Min($low, 20))/(Max($high, 20)-Min($low, 20)+1e-12)
+  source: Alpha158
+  description: 20日未成熟随机值，KDJ指标的基础
+  formula: (收盘价 - 20日最低价) / (20日最高价 - 20日最低价)
+  tags: ["技术指标类", "随机振荡器"]
+  metadata: ["$close", "$low", "$high"]
+- name: RSV30
+  qlib_expression: ($close-Min($low, 30))/(Max($high, 30)-Min($low, 30)+1e-12)
+  source: Alpha158
+  description: 30日未成熟随机值，KDJ指标的基础
+  formula: (收盘价 - 30日最低价) / (30日最高价 - 30日最低价)
+  tags: ["技术指标类", "随机振荡器"]
+  metadata: ["$close", "$low", "$high"]
+- name: RSV60
+  qlib_expression: ($close-Min($low, 60))/(Max($high, 60)-Min($low, 60)+1e-12)
+  source: Alpha158
+  description: 60日未成熟随机值，KDJ指标的基础
+  formula: (收盘价 - 60日最低价) / (60日最高价 - 60日最低价)
+  tags: ["技术指标类", "随机振荡器"]
+  metadata: ["$close", "$low", "$high"]
+- name: IMAX5
+  qlib_expression: IdxMax($high, 5)/5
+  source: Alpha158
+  description: 5日内最高价出现位置的归一化指数
+  formula: 5日内最高价出现的天数位置 / 5
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high"]
+- name: IMAX10
+  qlib_expression: IdxMax($high, 10)/10
+  source: Alpha158
+  description: 10日内最高价出现位置的归一化指数
+  formula: 10日内最高价出现的天数位置 / 10
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high"]
+- name: IMAX20
+  qlib_expression: IdxMax($high, 20)/20
+  source: Alpha158
+  description: 20日内最高价出现位置的归一化指数
+  formula: 20日内最高价出现的天数位置 / 20
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high"]
+- name: IMAX30
+  qlib_expression: IdxMax($high, 30)/30
+  source: Alpha158
+  description: 30日内最高价出现位置的归一化指数
+  formula: 30日内最高价出现的天数位置 / 30
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high"]
+- name: IMAX60
+  qlib_expression: IdxMax($high, 60)/60
+  source: Alpha158
+  description: 60日内最高价出现位置的归一化指数
+  formula: 60日内最高价出现的天数位置 / 60
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high"]
+- name: IMIN5
+  qlib_expression: IdxMin($low, 5)/5
+  source: Alpha158
+  description: 5日内最低价出现位置的归一化指数
+  formula: 5日内最低价出现的天数位置 / 5
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$low"]
+- name: IMIN10
+  qlib_expression: IdxMin($low, 10)/10
+  source: Alpha158
+  description: 10日内最低价出现位置的归一化指数
+  formula: 10日内最低价出现的天数位置 / 10
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$low"]
+- name: IMIN20
+  qlib_expression: IdxMin($low, 20)/20
+  source: Alpha158
+  description: 20日内最低价出现位置的归一化指数
+  formula: 20日内最低价出现的天数位置 / 20
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$low"]
+- name: IMIN30
+  qlib_expression: IdxMin($low, 30)/30
+  source: Alpha158
+  description: 30日内最低价出现位置的归一化指数
+  formula: 30日内最低价出现的天数位置 / 30
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$low"]
+- name: IMIN60
+  qlib_expression: IdxMin($low, 60)/60
+  source: Alpha158
+  description: 60日内最低价出现位置的归一化指数
+  formula: 60日内最低价出现的天数位置 / 60
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$low"]
+- name: IMXD5
+  qlib_expression: (IdxMax($high, 5)-IdxMin($low, 5))/5
+  source: Alpha158
+  description: 5日内最高价和最低价出现位置的时间差
+  formula: (5日最高价位置 - 5日最低价位置) / 5
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high", "$low"]
+- name: IMXD10
+  qlib_expression: (IdxMax($high, 10)-IdxMin($low, 10))/10
+  source: Alpha158
+  description: 10日内最高价和最低价出现位置的时间差
+  formula: (10日最高价位置 - 10日最低价位置) / 10
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high", "$low"]
+- name: IMXD20
+  qlib_expression: (IdxMax($high, 20)-IdxMin($low, 20))/20
+  source: Alpha158
+  description: 20日内最高价和最低价出现位置的时间差
+  formula: (20日最高价位置 - 20日最低价位置) / 20
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high", "$low"]
+- name: IMXD30
+  qlib_expression: (IdxMax($high, 30)-IdxMin($low, 30))/30
+  source: Alpha158
+  description: 30日内最高价和最低价出现位置的时间差
+  formula: (30日最高价位置 - 30日最低价位置) / 30
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high", "$low"]
+- name: IMXD60
+  qlib_expression: (IdxMax($high, 60)-IdxMin($low, 60))/60
+  source: Alpha158
+  description: 60日内最高价和最低价出现位置的时间差
+  formula: (60日最高价位置 - 60日最低价位置) / 60
+  tags: ["技术指标类", "位置指标"]
+  metadata: ["$high", "$low"]
+- name: CORR5
+  qlib_expression: Corr($close, Log($volume+1), 5)
+  source: Alpha158
+  description: 5日收盘价与对数成交量的相关系数
+  formula: 5日收盘价与log(成交量+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORR10
+  qlib_expression: Corr($close, Log($volume+1), 10)
+  source: Alpha158
+  description: 10日收盘价与对数成交量的相关系数
+  formula: 10日收盘价与log(成交量+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORR20
+  qlib_expression: Corr($close, Log($volume+1), 20)
+  source: Alpha158
+  description: 20日收盘价与对数成交量的相关系数
+  formula: 20日收盘价与log(成交量+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORR30
+  qlib_expression: Corr($close, Log($volume+1), 30)
+  source: Alpha158
+  description: 30日收盘价与对数成交量的相关系数
+  formula: 30日收盘价与log(成交量+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORR60
+  qlib_expression: Corr($close, Log($volume+1), 60)
+  source: Alpha158
+  description: 60日收盘价与对数成交量的相关系数
+  formula: 60日收盘价与log(成交量+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORD5
+  qlib_expression: Corr($close/Ref($close,1), Log($volume/Ref($volume, 1)+1), 5)
+  source: Alpha158
+  description: 5日价格变化率与成交量变化率的相关系数
+  formula: 5日价格变化率与log(成交量变化率+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORD10
+  qlib_expression: Corr($close/Ref($close,1), Log($volume/Ref($volume, 1)+1), 10)
+  source: Alpha158
+  description: 10日价格变化率与成交量变化率的相关系数
+  formula: 10日价格变化率与log(成交量变化率+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORD20
+  qlib_expression: Corr($close/Ref($close,1), Log($volume/Ref($volume, 1)+1), 20)
+  source: Alpha158
+  description: 20日价格变化率与成交量变化率的相关系数
+  formula: 20日价格变化率与log(成交量变化率+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORD30
+  qlib_expression: Corr($close/Ref($close,1), Log($volume/Ref($volume, 1)+1), 30)
+  source: Alpha158
+  description: 30日价格变化率与成交量变化率的相关系数
+  formula: 30日价格变化率与log(成交量变化率+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CORD60
+  qlib_expression: Corr($close/Ref($close,1), Log($volume/Ref($volume, 1)+1), 60)
+  source: Alpha158
+  description: 60日价格变化率与成交量变化率的相关系数
+  formula: 60日价格变化率与log(成交量变化率+1)的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$close", "$volume"]
+- name: CNTP5
+  qlib_expression: Mean($close>Ref($close, 1), 5)
+  source: Alpha158
+  description: 5日内收盘价上涨天数的比例
+  formula: 5日内上涨天数 / 5
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTP10
+  qlib_expression: Mean($close>Ref($close, 1), 10)
+  source: Alpha158
+  description: 10日内收盘价上涨天数的比例
+  formula: 10日内上涨天数 / 10
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTP20
+  qlib_expression: Mean($close>Ref($close, 1), 20)
+  source: Alpha158
+  description: 20日内收盘价上涨天数的比例
+  formula: 20日内上涨天数 / 20
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTP30
+  qlib_expression: Mean($close>Ref($close, 1), 30)
+  source: Alpha158
+  description: 30日内收盘价上涨天数的比例
+  formula: 30日内上涨天数 / 30
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTP60
+  qlib_expression: Mean($close>Ref($close, 1), 60)
+  source: Alpha158
+  description: 60日内收盘价上涨天数的比例
+  formula: 60日内上涨天数 / 60
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTN5
+  qlib_expression: Mean($close<Ref($close, 1), 5)
+  source: Alpha158
+  description: 5日内收盘价下跌天数的比例
+  formula: 5日内下跌天数 / 5
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTN10
+  qlib_expression: Mean($close<Ref($close, 1), 10)
+  source: Alpha158
+  description: 10日内收盘价下跌天数的比例
+  formula: 10日内下跌天数 / 10
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTN20
+  qlib_expression: Mean($close<Ref($close, 1), 20)
+  source: Alpha158
+  description: 20日内收盘价下跌天数的比例
+  formula: 20日内下跌天数 / 20
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTN30
+  qlib_expression: Mean($close<Ref($close, 1), 30)
+  source: Alpha158
+  description: 30日内收盘价下跌天数的比例
+  formula: 30日内下跌天数 / 30
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTN60
+  qlib_expression: Mean($close<Ref($close, 1), 60)
+  source: Alpha158
+  description: 60日内收盘价下跌天数的比例
+  formula: 60日内下跌天数 / 60
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTD5
+  qlib_expression: Mean($close>Ref($close, 1), 5)-Mean($close<Ref($close, 1), 5)
+  source: Alpha158
+  description: 5日内上涨天数比例与下跌天数比例的差值
+  formula: (5日上涨天数 - 5日下跌天数) / 5
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTD10
+  qlib_expression: Mean($close>Ref($close, 1), 10)-Mean($close<Ref($close, 1), 10)
+  source: Alpha158
+  description: 10日内上涨天数比例与下跌天数比例的差值
+  formula: (10日上涨天数 - 10日下跌天数) / 10
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTD20
+  qlib_expression: Mean($close>Ref($close, 1), 20)-Mean($close<Ref($close, 1), 20)
+  source: Alpha158
+  description: 20日内上涨天数比例与下跌天数比例的差值
+  formula: (20日上涨天数 - 20日下跌天数) / 20
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTD30
+  qlib_expression: Mean($close>Ref($close, 1), 30)-Mean($close<Ref($close, 1), 30)
+  source: Alpha158
+  description: 30日内上涨天数比例与下跌天数比例的差值
+  formula: (30日上涨天数 - 30日下跌天数) / 30
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: CNTD60
+  qlib_expression: Mean($close>Ref($close, 1), 60)-Mean($close<Ref($close, 1), 60)
+  source: Alpha158
+  description: 60日内上涨天数比例与下跌天数比例的差值
+  formula: (60日上涨天数 - 60日下跌天数) / 60
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMP5
+  qlib_expression: Sum(Greater($close-Ref($close, 1), 0), 5)/(Sum(Abs($close-Ref($close,
+    1)), 5)+1e-12)
+  source: Alpha158
+  description: 5日内收盘价上涨天数的比例
+  formula: 5日内上涨天数 / 5
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMP10
+  qlib_expression: Sum(Greater($close-Ref($close, 1), 0), 10)/(Sum(Abs($close-Ref($close,
+    1)), 10)+1e-12)
+  source: Alpha158
+  description: 10日内收盘价上涨天数的比例
+  formula: 10日内上涨天数 / 10
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMP20
+  qlib_expression: Sum(Greater($close-Ref($close, 1), 0), 20)/(Sum(Abs($close-Ref($close,
+    1)), 20)+1e-12)
+  source: Alpha158
+  description: 20日内收盘价上涨天数的比例
+  formula: 20日内上涨天数 / 20
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMP30
+  qlib_expression: Sum(Greater($close-Ref($close, 1), 0), 30)/(Sum(Abs($close-Ref($close,
+    1)), 30)+1e-12)
+  source: Alpha158
+  description: 30日内收盘价上涨天数的比例
+  formula: 30日内上涨天数 / 30
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMP60
+  qlib_expression: Sum(Greater($close-Ref($close, 1), 0), 60)/(Sum(Abs($close-Ref($close,
+    1)), 60)+1e-12)
+  source: Alpha158
+  description: 60日内收盘价上涨天数的比例
+  formula: 60日内上涨天数 / 60
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMN5
+  qlib_expression: Sum(Greater(Ref($close, 1)-$close, 0), 5)/(Sum(Abs($close-Ref($close,
+    1)), 5)+1e-12)
+  source: Alpha158
+  description: 5日内收盘价上涨天数的比例
+  formula: 5日内上涨天数 / 5
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMN10
+  qlib_expression: Sum(Greater(Ref($close, 1)-$close, 0), 10)/(Sum(Abs($close-Ref($close,
+    1)), 10)+1e-12)
+  source: Alpha158
+  description: 10日内收盘价上涨天数的比例
+  formula: 10日内上涨天数 / 10
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMN20
+  qlib_expression: Sum(Greater(Ref($close, 1)-$close, 0), 20)/(Sum(Abs($close-Ref($close,
+    1)), 20)+1e-12)
+  source: Alpha158
+  description: 20日内收盘价上涨天数的比例
+  formula: 20日内上涨天数 / 20
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMN30
+  qlib_expression: Sum(Greater(Ref($close, 1)-$close, 0), 30)/(Sum(Abs($close-Ref($close,
+    1)), 30)+1e-12)
+  source: Alpha158
+  description: 30日内收盘价上涨天数的比例
+  formula: 30日内上涨天数 / 30
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMN60
+  qlib_expression: Sum(Greater(Ref($close, 1)-$close, 0), 60)/(Sum(Abs($close-Ref($close,
+    1)), 60)+1e-12)
+  source: Alpha158
+  description: 60日内收盘价上涨天数的比例
+  formula: 60日内上涨天数 / 60
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMD5
+  qlib_expression: (Sum(Greater($close-Ref($close, 1), 0), 5)-Sum(Greater(Ref($close,
+    1)-$close, 0), 5))/(Sum(Abs($close-Ref($close, 1)), 5)+1e-12)
+  source: Alpha158
+  description: 5日内上涨天数比例与下跌天数比例的差值
+  formula: (5日上涨天数 - 5日下跌天数) / 5
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMD10
+  qlib_expression: (Sum(Greater($close-Ref($close, 1), 0), 10)-Sum(Greater(Ref($close,
+    1)-$close, 0), 10))/(Sum(Abs($close-Ref($close, 1)), 10)+1e-12)
+  source: Alpha158
+  description: 10日内上涨天数比例与下跌天数比例的差值
+  formula: (10日上涨天数 - 10日下跌天数) / 10
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMD20
+  qlib_expression: (Sum(Greater($close-Ref($close, 1), 0), 20)-Sum(Greater(Ref($close,
+    1)-$close, 0), 20))/(Sum(Abs($close-Ref($close, 1)), 20)+1e-12)
+  source: Alpha158
+  description: 20日内上涨天数比例与下跌天数比例的差值
+  formula: (20日上涨天数 - 20日下跌天数) / 20
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMD30
+  qlib_expression: (Sum(Greater($close-Ref($close, 1), 0), 30)-Sum(Greater(Ref($close,
+    1)-$close, 0), 30))/(Sum(Abs($close-Ref($close, 1)), 30)+1e-12)
+  source: Alpha158
+  description: 30日内上涨天数比例与下跌天数比例的差值
+  formula: (30日上涨天数 - 30日下跌天数) / 30
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: SUMD60
+  qlib_expression: (Sum(Greater($close-Ref($close, 1), 0), 60)-Sum(Greater(Ref($close,
+    1)-$close, 0), 60))/(Sum(Abs($close-Ref($close, 1)), 60)+1e-12)
+  source: Alpha158
+  description: 60日内上涨天数比例与下跌天数比例的差值
+  formula: (60日上涨天数 - 60日下跌天数) / 60
+  tags: ["趋势类", "涨跌统计"]
+  metadata: ["$close"]
+- name: VMA5
+  qlib_expression: Mean($volume, 5)/($volume+1e-12)
+  source: Alpha158
+  description: 5日成交量加权平均价相对当前成交量的比率
+  formula: 5日成交量加权平均价 / (成交量 + 1e-12)
+  tags: ["量价类", "相对价格"]
+  metadata: ["$volume"]
+- name: VMA10
+  qlib_expression: Mean($volume, 10)/($volume+1e-12)
+  source: Alpha158
+  description: 10日成交量加权平均价相对当前成交量的比率
+  formula: 10日成交量加权平均价 / (成交量 + 1e-12)
+  tags: ["量价类", "相对价格"]
+  metadata: ["$volume"]
+- name: VMA20
+  qlib_expression: Mean($volume, 20)/($volume+1e-12)
+  source: Alpha158
+  description: 20日成交量加权平均价相对当前成交量的比率
+  formula: 20日成交量加权平均价 / (成交量 + 1e-12)
+  tags: ["量价类", "相对价格"]
+  metadata: ["$volume"]
+- name: VMA30
+  qlib_expression: Mean($volume, 30)/($volume+1e-12)
+  source: Alpha158
+  description: 30日成交量加权平均价相对当前成交量的比率
+  formula: 30日成交量加权平均价 / (成交量 + 1e-12)
+  tags: ["量价类", "相对价格"]
+  metadata: ["$volume"]
+- name: VMA60
+  qlib_expression: Mean($volume, 60)/($volume+1e-12)
+  source: Alpha158
+  description: 60日成交量加权平均价相对当前成交量的比率
+  formula: 60日成交量加权平均价 / (成交量 + 1e-12)
+  tags: ["量价类", "相对价格"]
+  metadata: ["$volume"]
+- name: VSTD5
+  qlib_expression: Std($volume, 5)/($volume+1e-12)
+  source: Alpha158
+  description: 5日成交量标准差相对当前成交量的比率
+  formula: 5日成交量标准差 / (成交量 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume"]
+- name: VSTD10
+  qlib_expression: Std($volume, 10)/($volume+1e-12)
+  source: Alpha158
+  description: 10日成交量标准差相对当前成交量的比率
+  formula: 10日成交量标准差 / (成交量 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume"]
+- name: VSTD20
+  qlib_expression: Std($volume, 20)/($volume+1e-12)
+  source: Alpha158
+  description: 20日成交量标准差相对当前成交量的比率
+  formula: 20日成交量标准差 / (成交量 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume"]
+- name: VSTD30
+  qlib_expression: Std($volume, 30)/($volume+1e-12)
+  source: Alpha158
+  description: 30日成交量标准差相对当前成交量的比率
+  formula: 30日成交量标准差 / (成交量 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume"]
+- name: VSTD60
+  qlib_expression: Std($volume, 60)/($volume+1e-12)
+  source: Alpha158
+  description: 60日成交量标准差相对当前成交量的比率
+  formula: 60日成交量标准差 / (成交量 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume"]
+- name: WVMA5
+  qlib_expression: Std(Abs($close/Ref($close, 1)-1)*$volume, 5)/(Mean(Abs($close/Ref($close,
+    1)-1)*$volume, 5)+1e-12)
+  source: Alpha158
+  description: 5日成交量加权平均价的标准差
+  formula: 5日成交量加权平均价的标准差 / (5日成交量加权平均价 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume", "$close"]
+- name: WVMA10
+  qlib_expression: Std(Abs($close/Ref($close, 1)-1)*$volume, 10)/(Mean(Abs($close/Ref($close,
+    1)-1)*$volume, 10)+1e-12)
+  source: Alpha158
+  description: 10日成交量加权平均价的标准差
+  formula: 10日成交量加权平均价的标准差 / (10日成交量加权平均价 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume", "$close"]
+- name: WVMA20
+  qlib_expression: Std(Abs($close/Ref($close, 1)-1)*$volume, 20)/(Mean(Abs($close/Ref($close,
+    1)-1)*$volume, 20)+1e-12)
+  source: Alpha158
+  description: 20日成交量加权平均价的标准差
+  formula: 20日成交量加权平均价的标准差 / (20日成交量加权平均价 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume", "$close"]
+- name: WVMA30
+  qlib_expression: Std(Abs($close/Ref($close, 1)-1)*$volume, 30)/(Mean(Abs($close/Ref($close,
+    1)-1)*$volume, 30)+1e-12)
+  source: Alpha158
+  description: 30日成交量加权平均价的标准差
+  formula: 30日成交量加权平均价的标准差 / (30日成交量加权平均价 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume", "$close"]
+- name: WVMA60
+  qlib_expression: Std(Abs($close/Ref($close, 1)-1)*$volume, 60)/(Mean(Abs($close/Ref($close,
+    1)-1)*$volume, 60)+1e-12)
+  source: Alpha158
+  description: 60日成交量加权平均价的标准差
+  formula: 60日成交量加权平均价的标准差 / (60日成交量加权平均价 + 1e-12)
+  tags: ["量价类", "波动率"]
+  metadata: ["$volume", "$close"]
+- name: VSUMP5
+  qlib_expression: Sum(Greater($volume-Ref($volume, 1), 0), 5)/(Sum(Abs($volume-Ref($volume,
+    1)), 5)+1e-12)
+  source: Alpha158
+  description: 5日内成交量上涨天数的比例
+  formula: 5日内成交量上涨天数 / 5
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMP10
+  qlib_expression: Sum(Greater($volume-Ref($volume, 1), 0), 10)/(Sum(Abs($volume-Ref($volume,
+    1)), 10)+1e-12)
+  source: Alpha158
+  description: 10日内成交量上涨天数的比例
+  formula: 10日内成交量上涨天数 / 10
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMP20
+  qlib_expression: Sum(Greater($volume-Ref($volume, 1), 0), 20)/(Sum(Abs($volume-Ref($volume,
+    1)), 20)+1e-12)
+  source: Alpha158
+  description: 20日内成交量上涨天数的比例
+  formula: 20日内成交量上涨天数 / 20
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMP30
+  qlib_expression: Sum(Greater($volume-Ref($volume, 1), 0), 30)/(Sum(Abs($volume-Ref($volume,
+    1)), 30)+1e-12)
+  source: Alpha158
+  description: 30日内成交量上涨天数的比例
+  formula: 30日内成交量上涨天数 / 30
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMP60
+  qlib_expression: Sum(Greater($volume-Ref($volume, 1), 0), 60)/(Sum(Abs($volume-Ref($volume,
+    1)), 60)+1e-12)
+  source: Alpha158
+  description: 60日内成交量上涨天数的比例
+  formula: 60日内成交量上涨天数 / 60
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMN5
+  qlib_expression: Sum(Greater(Ref($volume, 1)-$volume, 0), 5)/(Sum(Abs($volume-Ref($volume,
+    1)), 5)+1e-12)
+  source: Alpha158
+  description: 5日内成交量下跌天数的比例
+  formula: 5日内成交量下跌天数 / 5
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMN10
+  qlib_expression: Sum(Greater(Ref($volume, 1)-$volume, 0), 10)/(Sum(Abs($volume-Ref($volume,
+    1)), 10)+1e-12)
+  source: Alpha158
+  description: 10日内成交量下跌天数的比例
+  formula: 10日内成交量下跌天数 / 10
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMN20
+  qlib_expression: Sum(Greater(Ref($volume, 1)-$volume, 0), 20)/(Sum(Abs($volume-Ref($volume,
+    1)), 20)+1e-12)
+  source: Alpha158
+  description: 20日内成交量下跌天数的比例
+  formula: 20日内成交量下跌天数 / 20
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMN30
+  qlib_expression: Sum(Greater(Ref($volume, 1)-$volume, 0), 30)/(Sum(Abs($volume-Ref($volume,
+    1)), 30)+1e-12)
+  source: Alpha158
+  description: 30日内成交量下跌天数的比例
+  formula: 30日内成交量下跌天数 / 30
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMN60
+  qlib_expression: Sum(Greater(Ref($volume, 1)-$volume, 0), 60)/(Sum(Abs($volume-Ref($volume,
+    1)), 60)+1e-12)
+  source: Alpha158
+  description: 60日内成交量下跌天数的比例
+  formula: 60日内成交量下跌天数 / 60
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMD5
+  qlib_expression: (Sum(Greater($volume-Ref($volume, 1), 0), 5)-Sum(Greater(Ref($volume,
+    1)-$volume, 0), 5))/(Sum(Abs($volume-Ref($volume, 1)), 5)+1e-12)
+  source: Alpha158
+  description: 5日内成交量上涨天数比例与下跌天数比例的差值
+  formula: (5日成交量上涨天数 - 5日成交量下跌天数) / 5
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMD10
+  qlib_expression: (Sum(Greater($volume-Ref($volume, 1), 0), 10)-Sum(Greater(Ref($volume,
+    1)-$volume, 0), 10))/(Sum(Abs($volume-Ref($volume, 1)), 10)+1e-12)
+  source: Alpha158
+  description: 10日内成交量上涨天数比例与下跌天数比例的差值
+  formula: (10日成交量上涨天数 - 10日成交量下跌天数) / 10
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMD20
+  qlib_expression: (Sum(Greater($volume-Ref($volume, 1), 0), 20)-Sum(Greater(Ref($volume,
+    1)-$volume, 0), 20))/(Sum(Abs($volume-Ref($volume, 1)), 20)+1e-12)
+  source: Alpha158
+  description: 20日内成交量上涨天数比例与下跌天数比例的差值
+  formula: (20日成交量上涨天数 - 20日成交量下跌天数) / 20
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMD30
+  qlib_expression: (Sum(Greater($volume-Ref($volume, 1), 0), 30)-Sum(Greater(Ref($volume,
+    1)-$volume, 0), 30))/(Sum(Abs($volume-Ref($volume, 1)), 30)+1e-12)
+  source: Alpha158
+  description: 30日内成交量上涨天数比例与下跌天数比例的差值
+  formula: (30日成交量上涨天数 - 30日成交量下跌天数) / 30
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: VSUMD60
+  qlib_expression: (Sum(Greater($volume-Ref($volume, 1), 0), 60)-Sum(Greater(Ref($volume,
+    1)-$volume, 0), 60))/(Sum(Abs($volume-Ref($volume, 1)), 60)+1e-12)
+  source: Alpha158
+  description: 60日内成交量上涨天数比例与下跌天数比例的差值
+  formula: (60日成交量上涨天数 - 60日成交量下跌天数) / 60
+  tags: ["量价类", "涨跌统计"]
+  metadata: ["$volume"]
+- name: label
+  qlib_expression: Ref($close, -1) / Ref($close, 0) - 1
+  source: custom_factor
+  description: 当日收盘价相对于前一日收盘价的变动率
+  formula: 昨日收盘价 / 今日收盘价 - 1
+  tags: ["价格变动"]
+  metadata: ["$close"]
+- name: vol_ratio
+  qlib_expression: Mean($volume, 5) / Mean($volume, 10) - 1
+  source: custom_factor
+  description: 5日平均成交量与10日平均成交量的比率
+  formula: 5日平均成交量 / 10日平均成交量 - 1
+  tags: ["量价类", "相对价格"]
+  metadata: ["$volume"]
+- name: price_change
+  qlib_expression: $close - Ref($close, 1)
+  source: custom_factor
+  description: 当日收盘价相对于前一日收盘价的变动量
+  formula: 今日收盘价 - 昨日收盘价
+  tags: ["价格变动"]
+  metadata: ["$close"]
+- name: gain
+  qlib_expression: If($close - Ref($close, 1) > 0, $close - Ref($close, 1), 0)
+  source: custom_factor
+  description: 当日收盘价相对于前一日收盘价的上涨量
+  formula: 如果今日收盘价 > 昨日收盘价，则今日收盘价 - 昨日收盘价；否则为0
+  tags: ["价格变动"]
+  metadata: ["$close"]
+- name: loss
+  qlib_expression: If($close - Ref($close, 1) < 0, Ref($close, 1) - $close, 0)
+  source: custom_factor
+  description: 当日收盘价相对于前一日收盘价的下跌量
+  formula: 如果今日收盘价 < 昨日收盘价，则昨日收盘价 - 今日收盘价；否则为0
+  tags: ["价格变动"]
+  metadata: ["$close"]
+- name: avg_gain
+  qlib_expression: EMA($gain, 14)
+  source: custom_factor
+  description: 14日平均上涨量
+  formula: 14日EMA(上涨量)
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: avg_loss
+  qlib_expression: EMA($loss, 14)
+  source: custom_factor
+  description: 14日平均下跌量
+  formula: 14日EMA(下跌量)
+  tags: ["动量类", "价格动量"]
+  metadata: ["$close"]
+- name: RSI_14
+  qlib_expression: 100 - 100 / (1 + $avg_gain / $avg_loss)
+  source: custom_factor
+  description: 14日相对强弱指数
+  formula: 100 - 100 / (1 + 14日平均上涨量 / 14日平均下跌量)
+  tags: ["技术指标类", "动量指标"]
+  metadata: ["$avg_gain", "$avg_loss"]
+- name: BB_middle
+  qlib_expression: Mean($close, 20)
+  source: custom_factor
+  description: 20日收盘价移动平均线
+  formula: 20日收盘价均价
+  tags: ["趋势类", "移动平均"]
+  metadata: ["$close"]
+- name: BB_upper
+  qlib_expression: Mean($close, 20) + 2 * Std($close, 20)
+  source: custom_factor
+  description: 20日收盘价上轨
+  formula: 20日收盘价均价 + 2 * 20日收盘价标准差
+  tags: ["技术指标类", "布林带"]
+  metadata: ["$close"]
+- name: BB_lower
+  qlib_expression: Mean($close, 20) - 2 * Std($close, 20)
+  source: custom_factor
+  description: 20日收盘价下轨
+  formula: 20日收盘价均价 - 2 * 20日收盘价标准差
+  tags: ["技术指标类", "布林带"]
+  metadata: ["$close"]
+- name: FIARI_RANGE
+  qlib_expression: (Ref($high, 1) - Ref($low, 1)) / Ref($close, 1)
+  source: custom_factor
+  description: 昨日价格波动率
+  formula: (昨日最高价 - 昨日最低价) / 昨日收盘价
+  tags: ["价格波动"]
+  metadata: ["$high", "$low", "$close"]
+- name: FIARI_GAP
+  qlib_expression: ($open - Ref($close, 1)) / Ref($close, 1)
+  source: custom_factor
+  description: 当日开盘价相对于前一日收盘价的缺口率
+  formula: (今日开盘价 - 昨日收盘价) / 昨日收盘价
+  tags: ["价格变动"]
+  metadata: ["$open", "$close"]
+- name: FIARI_COMPOSITE
+  qlib_expression: (Ref($high, 1) - Ref($low, 1)) / Ref($close, 1) * Sign($open -
+    Ref($close, 1))
+  source: custom_factor
+  description: 昨日价格波动率与开盘价缺口的复合指标
+  formula: (昨日最高价 - 昨日最低价) / 昨日收盘价 * Sign(今日开盘价 - 昨日收盘价)
+  tags: ["价格波动"]
+  metadata: ["$high", "$low", "$close", "$open"]
+- name: VOL_UPPER
+  qlib_expression: Mean(($high - $low) / $open, 10) + Std(($high - $low) / $open,
+    10)
+  source: custom_factor
+  description: 10日价格波动率上轨
+  formula: 10日价格波动率均价 + 10日价格波动率标准差
+  tags: ["技术指标类", "布林带"]
+  metadata: ["$high", "$low", "$open"]
+- name: VOL_LOWER
+  qlib_expression: Mean(($high - $low) / $open, 10) - Std(($high - $low) / $open,
+    10)
+  source: custom_factor
+  description: 10日价格波动率下轨
+  formula: 10日价格波动率均价 - 10日价格波动率标准差
+  tags: ["技术指标类", "布林带"]
+  metadata: ["$high", "$low", "$open"]
+- name: VOL_TREND
+  qlib_expression: Mean(($high - $low) / $open, 3) / Ref(Mean(($high - $low) / $open,
+    3), 1) - 1
+  source: custom_factor
+  description: 3日价格波动率趋势
+  formula: 3日价格波动率均价 / 昨日3日价格波动率均价 - 1
+  tags: ["价格波动"]
+  metadata: ["$high", "$low", "$open"]
+- name: SKEW_5D
+  qlib_expression: Skew(Ref($close, 0)/Ref($close, 1) - 1, 5)
+  source: custom_factor
+  description: 5日收盘价收益率偏度
+  formula: 5日收益率偏度
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: SKEW_10D
+  qlib_expression: Skew(Ref($close, 0)/Ref($close, 1) - 1, 10)
+  source: custom_factor
+  description: 10日收盘价收益率偏度
+  formula: 10日收益率偏度
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: SKEW_20D
+  qlib_expression: Skew(Ref($close, 0)/Ref($close, 1) - 1, 20)
+  source: custom_factor
+  description: 20日收盘价收益率偏度
+  formula: 20日收益率偏度
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: KURT_5D
+  qlib_expression: Kurt(Ref($close, 0)/Ref($close, 1) - 1, 5)
+  source: custom_factor
+  description: 5日收盘价收益率峰度
+  formula: 5日收益率峰度
+  tags: ["技术指标类", "峰度"]
+  metadata: ["$close"]
+- name: KURT_10D
+  qlib_expression: Kurt(Ref($close, 0)/Ref($close, 1) - 1, 10)
+  source: custom_factor
+  description: 10日收盘价收益率峰度
+  formula: 10日收益率峰度
+  tags: ["技术指标类", "峰度"]
+  metadata: ["$close"]
+- name: KURT_20D
+  qlib_expression: Kurt(Ref($close, 0)/Ref($close, 1) - 1, 20)
+  source: custom_factor
+  description: 20日收盘价收益率峰度
+  formula: 20日收益率峰度
+  tags: ["技术指标类", "峰度"]
+  metadata: ["$close"]
+- name: SKEW_DIFF_5_20
+  qlib_expression: Sub(Skew(Ref($close, 0)/Ref($close, 1) - 1, 5), Skew(Ref($close,
+    0)/Ref($close, 1) - 1, 20))
+  source: custom_factor
+  description: 5日与20日收益率偏度的差值
+  formula: 5日收益率偏度 - 20日收益率偏度
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: SKEW_DIFF_10_20
+  qlib_expression: Sub(Skew(Ref($close, 0)/Ref($close, 1) - 1, 10), Skew(Ref($close,
+    0)/Ref($close, 1) - 1, 20))
+  source: custom_factor
+  description: 10日与20日收益率偏度的差值
+  formula: 10日收益率偏度 - 20日收益率偏度
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: KURT_SLOPE_5_20
+  qlib_expression: Sub(Kurt(Ref($close, 0)/Ref($close, 1) - 1, 5), Kurt(Ref($close,
+    0)/Ref($close, 1) - 1, 20))
+  source: custom_factor
+  description: 5日与20日收益率峰度的差值
+  formula: 5日收益率峰度 - 20日收益率峰度
+  tags: ["技术指标类", "峰度"]
+  metadata: ["$close"]
+- name: KURT_SLOPE_10_20
+  qlib_expression: Sub(Kurt(Ref($close, 0)/Ref($close, 1) - 1, 10), Kurt(Ref($close,
+    0)/Ref($close, 1) - 1, 20))
+  source: custom_factor
+  description: 10日与20日收益率峰度的差值
+  formula: 10日收益率峰度 - 20日收益率峰度
+  tags: ["技术指标类", "峰度"]
+  metadata: ["$close"]
+- name: VOL_SKEW_5D
+  qlib_expression: Mul(Skew(Ref($close, 0)/Ref($close, 1) - 1, 5), Std(Ref($close,
+    0)/Ref($close, 1) - 1, 5))
+  source: custom_factor
+  description: 5日收益率偏度与5日收益率标准差的乘积
+  formula: 5日收益率偏度 * 5日收益率标准差
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: VOL_SKEW_20D
+  qlib_expression: Mul(Skew(Ref($close, 0)/Ref($close, 1) - 1, 20), Std(Ref($close,
+    0)/Ref($close, 1) - 1, 20))
+  source: custom_factor
+  description: 20日收益率偏度与20日收益率标准差的乘积
+  formula: 20日收益率偏度 * 20日收益率标准差
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$close"]
+- name: INTRADAY_SKEW
+  qlib_expression: Skew(Div(Sub($high, $low), $open), 5)
+  source: custom_factor
+  description: 日内价格波动率偏度
+  formula: 日内价格波动率偏度
+  tags: ["技术指标类", "偏度"]
+  metadata: ["$high", "$low", "$open"]
+- name: INTRADAY_KURT
+  qlib_expression: Kurt(Div(Sub($high, $low), $open), 5)
+  source: custom_factor
+  description: 日内价格波动率峰度
+  formula: 日内价格波动率峰度
+  tags: ["技术指标类", "峰度"]
+  metadata: ["$high", "$low", "$open"]
+- name: INTRADAY_RET_CORR
+  qlib_expression: Corr(Div(Sub($high, $low), $open), Ref($close, 0)/Ref($close, 1)
+    - 1, 5)
+  source: custom_factor
+  description: 日内价格波动率与收益率的相关系数
+  formula: 日内价格波动率与收益率的相关系数
+  tags: ["量价关系类", "相关性"]
+  metadata: ["$high", "$low", "$open", "$close"]
