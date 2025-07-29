@@ -1,27 +1,35 @@
 # custom_factors.py
 
-# 定义因子表达式（使用 Qlib 表达式语法）
-expressions = {
-    # 0. 目标变量: 下期收益率
-    "label": "Ref($close, -1) / Ref($close, 0) - 1",
-    # 1. 动量因子: 5日涨跌幅
-    "momentum_5": "Ref($close, 0) / Ref($close, 5) - 1",
-    # 2. 成交量比: 5日均量/10日均量 - 1
-    "vol_ratio": "Mean($volume, 5) / Mean($volume, 10) - 1",
-    # 3. RSI_14: 14日相对强弱指标
-    # U = EMA(max(price_change,0), 14)，D = EMA(max(-price_change,0),14)
-    # RSI = 100 - 100 / (1 + U/D)
-    "price_change": "$close - Ref($close, 1)",
-    "gain": "If($close - Ref($close, 1) > 0, $close - Ref($close, 1), 0)",
-    "loss": "If($close - Ref($close, 1) < 0, Ref($close, 1) - $close, 0)",
-    "avg_gain": "EMA($gain, 14)",
-    "avg_loss": "EMA($loss, 14)",
-    "RSI_14": "100 - 100 / (1 + $avg_gain / $avg_loss)",
-    # 4. 布林带 (Bollinger Bands) 中轨/上轨/下轨
-    "BB_middle": "Mean($close, 20)",
-    "BB_upper": "Mean($close, 20) + 2 * Std($close, 20)",
-    "BB_lower": "Mean($close, 20) - 2 * Std($close, 20)",
-}
+import yaml
+import os
+from pathlib import Path
+
+
+def load_custom_factors_from_yaml():
+    """从factors.yaml文件中加载source为custom_factor的因子"""
+    # 获取当前文件所在目录
+    current_dir = Path(__file__).parent
+    yaml_file = current_dir / "factors.yaml"
+
+    if not yaml_file.exists():
+        raise FileNotFoundError(f"factors.yaml文件不存在: {yaml_file}")
+
+    with open(yaml_file, "r", encoding="utf-8") as f:
+        factors_data = yaml.safe_load(f)
+
+    # 过滤出source为custom_factor的因子
+    custom_factors = {}
+    for factor in factors_data:
+        if factor.get("source") == "custom_factor":
+            name = factor["name"]
+            expression = factor["qlib_expression"]
+            custom_factors[name] = expression
+
+    return custom_factors
+
+
+# 从YAML文件加载自定义因子
+expressions = load_custom_factors_from_yaml()
 
 from qlib.data.dataset.loader import QlibDataLoader
 
