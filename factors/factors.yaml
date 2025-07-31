@@ -109,6 +109,45 @@
   - $close
   - $high
   - $low
+- name: VOLUME_WEIGHTED_MFI_14
+  qlib_expression: "100 - 100 / (1 + Mean(If($close > Ref($close, 1), $close * Power($volume, 2), 0), 14) / (Mean(If($close < Ref($close, 1), $close * Power($volume, 2), 0), 14) + 1e-12))"
+  source: custom_factor
+  description: 14日成交量加权资金流指标，使用成交量的平方作为权重，更强调大成交量的影响
+  formula: 100 - 100 / (1 + 14日上涨资金流 / 14日下跌资金流)，其中资金流 = 收盘价 * 成交量^2
+  tags:
+    - 量价类
+    - 动量
+    - 资金流向
+  metadata:
+    - $close
+    - $volume
+    - window: 14
+
+- name: KLINE_PATTERN
+  qlib_expression: "($high - Greater($open, $close)) / ($high - $low + 0.000001) - (Less($open, $close) - $low) / ($high - $low + 0.000001)"
+  source: custom_factor
+  description: K线形态特征，上下影线比例的差值，反映K线的偏向性（正值表示上影线占优，负值表示下影线占优）
+  formula: (上影线长度/K线总长度) - (下影线长度/K线总长度)
+  tags:
+    - 量价类
+    - 技术形态
+    - K线形态
+  metadata:
+    - $high
+    - $low
+    - $open
+    - $close
+  qlib_expression: (2*$close-$high-$low)/($high-$low+1e-12)
+  source: Alpha158
+  description: 收盘价相对高低价中点的偏移，相对日内波幅标准化
+  formula: (2×收盘价 - 最高价 - 最低价) / (最高价 - 最低价)
+  tags:
+  - 量价类
+  - 技术形态
+  metadata:
+  - $close
+  - $high
+  - $low
 - name: OPEN0
   qlib_expression: $open/$close
   source: Alpha158
@@ -1697,64 +1736,16 @@
   - 相对价格
   metadata:
   - $volume
-- name: price_change
-  qlib_expression: $close - Ref($close, 1)
+- name: RSI
+  qlib_expression: 100 - 100 / (1 + Mean(If($close > Ref($close, 1), $close - Ref($close, 1), 0), 14) / (Mean(If($close < Ref($close, 1), Ref($close, 1) - $close, 0), 14) + 1e-12))
   source: custom_factor
-  description: 当日收盘价相对于前一日收盘价的变动量
-  formula: 今日收盘价 - 昨日收盘价
-  tags:
-  - 价格变动
-  metadata:
-  - $close
-- name: gain
-  qlib_expression: If($close - Ref($close, 1) > 0, $close - Ref($close, 1), 0)
-  source: custom_factor
-  description: 当日收盘价相对于前一日收盘价的上涨量
-  formula: 如果今日收盘价 > 昨日收盘价，则今日收盘价 - 昨日收盘价；否则为0
-  tags:
-  - 价格变动
-  metadata:
-  - $close
-- name: loss
-  qlib_expression: If($close - Ref($close, 1) < 0, Ref($close, 1) - $close, 0)
-  source: custom_factor
-  description: 当日收盘价相对于前一日收盘价的下跌量
-  formula: 如果今日收盘价 < 昨日收盘价，则昨日收盘价 - 今日收盘价；否则为0
-  tags:
-  - 价格变动
-  metadata:
-  - $close
-- name: avg_gain
-  qlib_expression: EMA($gain, 14)
-  source: custom_factor
-  description: 14日平均上涨量
-  formula: 14日EMA(上涨量)
-  tags:
-  - 动量类
-  - 价格动量
-  metadata:
-  - $close
-- name: avg_loss
-  qlib_expression: EMA($loss, 14)
-  source: custom_factor
-  description: 14日平均下跌量
-  formula: 14日EMA(下跌量)
-  tags:
-  - 动量类
-  - 价格动量
-  metadata:
-  - $close
-- name: RSI_14
-  qlib_expression: 100 - 100 / (1 + $avg_gain / $avg_loss)
-  source: custom_factor
-  description: 14日相对强弱指数
-  formula: 100 - 100 / (1 + 14日平均上涨量 / 14日平均下跌量)
+  description: 14日相对强弱指数，用于衡量价格动量强弱
+  formula: 100 - 100 / (1 + 14日平均上涨幅度 / 14日平均下跌幅度)
   tags:
   - 技术指标类
   - 动量指标
   metadata:
-  - $avg_gain
-  - $avg_loss
+  - $close
 - name: BB_middle
   qlib_expression: Mean($close, 20)
   source: custom_factor
@@ -2021,3 +2012,126 @@
   - $low
   - $open
   - $close
+- name: OBV
+  talib_function: OBV
+  inputs:
+  - $close
+  - $volume
+  source: custom_factor
+  description: On Balance Volume (OBV)指标，通过累积成交量来衡量价格趋势的强弱，当收盘价上涨时累加成交量，下跌时减去成交量
+  formula: 当日收盘价>前日收盘价，OBV = 前日OBV + 当日成交量；当日收盘价<前日收盘价，OBV = 前日OBV - 当日成交量；当日收盘价=前日收盘价，OBV = 前日OBV
+  tags:
+  - 量价类
+  - 趋势类
+  - 成交量
+  metadata:
+  - $close
+  - $volume
+- name: ADX14
+  talib_function: ADX
+  inputs:
+  - $high
+  - $low
+  - $close
+  params:
+    timeperiod: 14
+  source: custom_factor
+  description: Average Directional Index (ADX)指标，用于衡量趋势的强度，不论趋势是向上还是向下
+  formula: ADX = 100 * SMA(abs(+DI - -DI) / (+DI + -DI), 14)，其中DI是方向指标
+  tags:
+  - 趋势类
+  - 动量指标
+  metadata:
+  - $high
+  - $low
+  - $close
+- name: GAP_VOL_20
+  qlib_expression: Std(Abs($open / Ref($close, 1) - 1), 20)
+  source: custom_factor
+  description: 20日跳空波动率，衡量股票隔夜跳空的波动程度
+  formula: std(abs(开盘价/前一日收盘价 - 1), 20日)
+  tags:
+    - 量价类
+    - 波动率
+    - 跳空
+  metadata:
+    - $open
+    - $close
+    - window: 20
+- name: KDJ_K
+  python_code: |
+    # 计算KDJ指标的K值
+    import pandas as pd
+    import numpy as np
+    import talib
+
+    # 使用talib的STOCH函数计算K值
+    k_values, _ = talib.STOCH(high, low, close,
+                             fastk_period=9,
+                             slowk_period=3,
+                             slowk_matype=0,
+                             slowd_period=3,
+                             slowd_matype=0)
+
+    result = pd.Series(k_values, index=high.index)
+  inputs: ["high", "low", "close"]
+  outputs: ["result"]
+  source: custom_factor
+  description: KDJ指标的K值，快速随机指标，使用9日RSV的3日移动平均，用于判断价格动量的强弱
+  formula: K = SMA(RSV, 3)，其中RSV = (收盘价 - 9日最低价) / (9日最高价 - 9日最低价) * 100
+  tags: ["技术指标类", "动量指标", "随机振荡器"]
+  metadata: ["$high", "$low", "$close"]
+
+- name: KDJ_D
+  python_code: |
+    # 计算KDJ指标的D值
+    import pandas as pd
+    import numpy as np
+    import talib
+
+    # 使用talib的STOCH函数计算D值
+    _, d_values = talib.STOCH(high, low, close,
+                             fastk_period=9,
+                             slowk_period=3,
+                             slowk_matype=0,
+                             slowd_period=3,
+                             slowd_matype=0)
+
+    result = pd.Series(d_values, index=high.index)
+  inputs: ["high", "low", "close"]
+  outputs: ["result"]
+  source: custom_factor
+  description: KDJ指标的D值，慢速随机指标，使用K值的3日移动平均，用于判断价格趋势的稳定性
+  formula: D = SMA(K, 3)，其中K是快速随机指标
+  tags: ["技术指标类", "动量指标", "随机振荡器"]
+  metadata: ["$high", "$low", "$close"]
+
+- name: KDJ_J
+  python_code: |
+    # 计算KDJ指标的J值：J = 3*K - 2*D
+    import pandas as pd
+    import numpy as np
+    import talib
+
+    # 首先计算K和D值
+    k_values, d_values = talib.STOCH(high, low, close,
+                                    fastk_period=9,
+                                    slowk_period=3,
+                                    slowk_matype=0,
+                                    slowd_period=3,
+                                    slowd_matype=0)
+
+    # 计算J值
+    j_values = 3 * k_values - 2 * d_values
+
+    # 确保J值在合理范围内（0-100）
+    j_values = np.clip(j_values, 0, 100)
+
+    result = pd.Series(j_values, index=high.index)
+  inputs: ["high", "low", "close"]
+  outputs: ["result"]
+  source: custom_factor
+  description: KDJ指标的J值，J = 3*K - 2*D，用于判断超买超卖状态，J值过高表示超买，过低表示超卖
+  formula: J = 3*K - 2*D，其中K是快速随机指标，D是慢速随机指标
+  tags: ["技术指标类", "动量指标", "随机振荡器", "超买超卖"]
+  metadata: ["$high", "$low", "$close"]

@@ -279,28 +279,3 @@ def get_custom_factors_dataframe(
     handler = create_custom_factor_handler(instruments, start_time, end_time, **kwargs)
     return handler.fetch()
 
-
-if __name__ == "__main__":
-    import qlib
-    from qlib.config import REG_CN
-
-    qlib.init(provider_uri="~/.qlib/qlib_data/cn_data", region=REG_CN)
-
-    from factor_inspector import read_corr_params
-
-    instruments, start_time, end_time = read_corr_params("handler_config.yaml")
-
-    handler_config = {
-        "start_time": start_time,
-        "end_time": end_time,
-        "fit_start_time": start_time,
-        "fit_end_time": end_time,
-        "instruments": instruments,
-    }
-
-    handler = CustomFactor(**handler_config)
-    # 使用fetch方法获取因子数据
-    df = handler.fetch()
-    print(f"获取到的因子数据形状: {df.shape}")
-    print(f"列名: {list(df.columns)}")
-    print(df.tail())

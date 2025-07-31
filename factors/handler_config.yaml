@@ -2,7 +2,7 @@ handlers:
   - module: qlib.contrib.data.loader
     class: Alpha158DL
   - module: factors.custom_factors
-    class: CustomFactorDL
+    class: CustomFactor
 
 corr_params:
   instruments: ["SH600519"]
