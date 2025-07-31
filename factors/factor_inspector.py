@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Any
 import json
 import time
 import re
+import numpy as np
 
 # 尝试加载python-dotenv来支持.env文件
 try:
@@ -24,6 +25,292 @@ except ImportError:
         "Warning: python-dotenv not available. Install with: pip install python-dotenv"
     )
     print("You can still use system environment variables.")
+
+
+class FactorCalculator:
+    """
+    因子计算器类，支持多种类型的因子计算
+
+    支持的因子类型：
+    1. qlib_expression: Qlib表达式
+    2. talib_function: TA-Lib技术指标函数
+    3. python_code: 自定义Python代码
+    """
+
+    def __init__(self, expressions):
+        """
+        初始化因子计算器
+
+        Args:
+            expressions (dict): 因子配置字典
+        """
+        self.expressions = expressions
+        self._validate_expressions()
+
+    def _validate_expressions(self):
+        """验证因子表达式配置"""
+        for factor_name, config in self.expressions.items():
+            if isinstance(config, dict):
+                if "type" not in config:
+                    raise ValueError(f"因子 {factor_name} 缺少 'type' 字段")
+                if config["type"] not in [
+                    "qlib_expression",
+                    "talib_function",
+                    "python_code",
+                ]:
+                    raise ValueError(
+                        f"因子 {factor_name} 的类型 {config['type']} 不支持"
+                    )
+
+    def calculate_factor(
+        self, factor_name, df_base, instruments=None, start_time=None, end_time=None
+    ):
+        """
+        计算指定因子的值
+
+        Args:
+            factor_name (str): 因子名称
+            df_base (pd.DataFrame): 基础数据，包含 close, volume, open, high, low 等列
+            instruments: 股票池（用于qlib表达式计算）
+            start_time: 开始时间（用于qlib表达式计算）
+            end_time: 结束时间（用于qlib表达式计算）
+
+        Returns:
+            pd.Series: 计算得到的因子值
+        """
+        if factor_name not in self.expressions:
+            raise KeyError(f"因子 {factor_name} 不存在于表达式配置中")
+
+        config = self.expressions[factor_name]
+
+        if isinstance(config, str):
+            # 向后兼容：直接是表达式字符串
+            return self._calculate_qlib_expression(
+                config, df_base, instruments, start_time, end_time
+            )
+        elif isinstance(config, dict):
+            factor_type = config["type"]
+
+            if factor_type == "qlib_expression":
+                return self._calculate_qlib_expression(
+                    config["expression"], df_base, instruments, start_time, end_time
+                )
+            elif factor_type == "talib_function":
+                return self._calculate_talib_function(config, df_base)
+            elif factor_type == "python_code":
+                return self._calculate_python_code(config, df_base)
+            else:
+                raise ValueError(f"不支持的因子类型: {factor_type}")
+        else:
+            raise ValueError(f"因子配置格式错误: {config}")
+
+    def _calculate_qlib_expression(
+        self, expression, df_base, instruments=None, start_time=None, end_time=None
+    ):
+        """计算Qlib表达式因子"""
+        try:
+            # 如果提供了时间和股票池参数，使用D.features计算
+            if (
+                instruments is not None
+                and start_time is not None
+                and end_time is not None
+            ):
+                factor_value = D.features(
+                    instruments, [expression], start_time, end_time
+                )
+                result = factor_value.iloc[:, 0]
+
+                # 确保索引与df_base一致
+                if len(result) != len(df_base) or not result.index.equals(
+                    df_base.index
+                ):
+                    # 重新索引以匹配df_base
+                    result = result.reindex(df_base.index)
+
+                return result
+            else:
+                # 如果没有提供参数，返回空值（向后兼容）
+                print(f"警告: 无法计算qlib表达式 '{expression}'，缺少必要参数")
+                return pd.Series(index=df_base.index, dtype=float)
+
+        except Exception as e:
+            print(f"计算qlib表达式 '{expression}' 时出错: {e}")
+            return pd.Series(index=df_base.index, dtype=float)
+
+    def _calculate_talib_function(self, config, df_base):
+        """计算TA-Lib函数因子"""
+        try:
+            import talib
+        except ImportError:
+            raise ImportError("需要安装TA-Lib库: pip install TA-Lib")
+
+        function_name = config["function"]
+        parameters = config.get("parameters", {})
+
+        # 获取TA-Lib函数
+        if not hasattr(talib, function_name):
+            raise AttributeError(f"TA-Lib没有函数: {function_name}")
+
+        talib_func = getattr(talib, function_name)
+
+        # 准备函数参数
+        func_args = []
+        func_kwargs = {}
+
+        # 根据函数需要的参数类型准备数据
+        try:
+            # 大多数TA-Lib函数需要price数据作为位置参数
+            if function_name.upper() in [
+                "SMA",
+                "EMA",
+                "RSI",
+                "MOM",
+                "ROC",
+                "WILLR",
+                "CCI",
+                "DX",
+                "ADXR",
+            ]:
+                if function_name.upper() in ["WILLR", "CCI"]:
+                    # 这些函数需要high, low, close
+                    func_args = [
+                        df_base["high"].values,
+                        df_base["low"].values,
+                        df_base["close"].values,
+                    ]
+                elif function_name.upper() in ["DX", "ADXR"]:
+                    # 这些函数需要high, low, close
+                    func_args = [
+                        df_base["high"].values,
+                        df_base["low"].values,
+                        df_base["close"].values,
+                    ]
+                else:
+                    # 大多数函数使用close价格
+                    func_args = [df_base["close"].values]
+            elif function_name.upper() == "ADX":
+                # ADX需要high, low, close
+                func_args = [
+                    df_base["high"].values,
+                    df_base["low"].values,
+                    df_base["close"].values,
+                ]
+            elif function_name.upper() in ["MACD", "MACDEXT", "MACDFIX"]:
+                # MACD系列函数
+                func_args = [df_base["close"].values]
+            else:
+                # 默认使用close价格
+                func_args = [df_base["close"].values]
+
+            # 添加其他参数
+            func_kwargs.update(parameters)
+
+            # 计算指标
+            result = talib_func(*func_args, **func_kwargs)
+
+            # 处理返回结果
+            if isinstance(result, tuple):
+                # 如果返回多个值（如MACD返回三个值），取第一个
+                result = result[0]
+
+            # 转换为pandas Series
+            return pd.Series(result, index=df_base.index)
+
+        except Exception as e:
+            print(f"计算TA-Lib函数 {function_name} 时出错: {e}")
+            return pd.Series(index=df_base.index, dtype=float)
+
+    def _calculate_python_code(self, config, df_base):
+        """计算自定义Python代码因子"""
+        code = config["code"]
+
+        # 准备执行环境
+        exec_globals = {
+            "pd": pd,
+            "np": np,
+            "df": df_base,
+            "close": df_base["close"],
+            "volume": df_base["volume"],
+            "open": df_base["open"],
+            "high": df_base["high"],
+            "low": df_base["low"],
+        }
+
+        # 添加常用的数学函数
+        exec_globals.update(
+            {
+                "abs": abs,
+                "max": max,
+                "min": min,
+                "sum": sum,
+                "len": len,
+                "round": round,
+            }
+        )
+
+        try:
+            # 执行代码
+            exec_locals = {}
+            exec(code, exec_globals, exec_locals)
+
+            # 获取结果，寻找名为'result'的变量
+            if "result" in exec_locals:
+                result = exec_locals["result"]
+                if isinstance(result, pd.Series):
+                    return result
+                elif isinstance(result, (list, np.ndarray)):
+                    return pd.Series(result, index=df_base.index)
+                else:
+                    # 标量值，广播到所有行
+                    return pd.Series([result] * len(df_base), index=df_base.index)
+            else:
+                print(f"Python代码执行后未找到'result'变量")
+                return pd.Series(index=df_base.index, dtype=float)
+
+        except Exception as e:
+            print(f"执行Python代码时出错: {e}")
+            return pd.Series(index=df_base.index, dtype=float)
+
+    def calculate_all_factors(
+        self, df_base, instruments=None, start_time=None, end_time=None
+    ):
+        """
+        批量计算所有因子
+
+        Args:
+            df_base (pd.DataFrame): 基础数据
+            instruments: 股票池
+            start_time: 开始时间
+            end_time: 结束时间
+
+        Returns:
+            dict: 所有因子的计算结果
+        """
+        results = {}
+
+        for factor_name in self.expressions.keys():
+            try:
+                print(f"正在计算因子: {factor_name}")
+                factor_value = self.calculate_factor(
+                    factor_name, df_base, instruments, start_time, end_time
+                )
+                results[factor_name] = factor_value
+
+                # 输出基本统计信息
+                if not factor_value.isnull().all():
+                    print(
+                        f"因子 {factor_name} 计算完成 - 有效值: {factor_value.count()}/{len(factor_value)}, "
+                        f"均值: {factor_value.mean():.4f}, 标准差: {factor_value.std():.4f}"
+                    )
+                else:
+                    print(f"因子 {factor_name} 计算完成但无有效值")
+
+            except Exception as e:
+                print(f"计算因子 {factor_name} 时出错: {e}")
+                results[factor_name] = pd.Series(index=df_base.index, dtype=float)
+                continue
+
+        return results
 
 
 def replace_env_vars(config_str: str) -> str:
@@ -498,11 +785,102 @@ def load_handlers(config_path):
 
 
 def get_all_factors(handlers):
+    """
+    获取所有handler的因子配置
+
+    对于不同类型的handler采用不同的处理策略：
+    1. Alpha158DL: 使用get_feature_config获取qlib表达式
+    2. CustomFactor: 分别计算并合并结果
+    """
+    # 初始化qlib
+    qlib.init(region=REG_CN)
+
+    # 从配置文件读取参数
+    instruments, start_time, end_time = read_corr_params("handler_config.yaml")
+
     all_factors = {}
-    for handler in handlers:
-        fields, names = handler.get_feature_config()
-        for name, field in zip(names, fields):
-            all_factors[name] = field
+
+    for handler_cls in handlers:
+        print(f"处理Handler: {handler_cls.__name__}")
+
+        if handler_cls.__name__ == "Alpha158DL":
+            # Alpha158DL - 使用传统方法
+            if hasattr(handler_cls, "get_feature_config"):
+                if "staticmethod" in str(handler_cls.get_feature_config):
+                    fields, names = handler_cls.get_feature_config()
+                else:
+                    handler = handler_cls()
+                    fields, names = handler.get_feature_config()
+
+                for name, field in zip(names, fields):
+                    all_factors[name] = field
+
+                print(f"Alpha158DL: 添加了 {len(names)} 个因子")
+
+        elif handler_cls.__name__ == "CustomFactor" or "CustomFactor" in str(
+            handler_cls.__bases__
+        ):
+            # CustomFactor - 分别获取数据并合并
+            try:
+                # 创建handler实例
+                handler = handler_cls(
+                    instruments=instruments,
+                    start_time=start_time,
+                    end_time=end_time,
+                )
+
+                # 直接获取计算后的数据
+                df_custom = handler.fetch()
+
+                # 将每列作为一个"因子"添加到all_factors中
+                for col in df_custom.columns:
+                    # 对于CustomFactor的数据，我们使用占位符表达式
+                    # 实际的计算逻辑在CustomFactor内部完成
+                    all_factors[col] = f"CustomFactor:{col}"  # 特殊标记
+
+                print(f"CustomFactor: 添加了 {len(df_custom.columns)} 个因子")
+
+            except Exception as e:
+                print(f"处理CustomFactor时出错: {e}")
+                # 如果fetch失败，尝试使用get_feature_config方法
+                if hasattr(handler_cls, "get_feature_config"):
+                    try:
+                        handler = handler_cls(
+                            instruments=instruments,
+                            start_time=start_time,
+                            end_time=end_time,
+                        )
+                        fields, names = handler.get_feature_config()
+                        for name, field in zip(names, fields):
+                            all_factors[name] = field
+                        print(f"CustomFactor (fallback): 添加了 {len(names)} 个因子")
+                    except Exception as e2:
+                        print(f"CustomFactor fallback也失败: {e2}")
+
+        else:
+            # 其他handler - 使用通用方法
+            if hasattr(handler_cls, "get_feature_config"):
+                try:
+                    if "staticmethod" in str(handler_cls.get_feature_config):
+                        fields, names = handler_cls.get_feature_config()
+                    else:
+                        handler = handler_cls(
+                            instruments=instruments,
+                            start_time=start_time,
+                            end_time=end_time,
+                        )
+                        fields, names = handler.get_feature_config()
+
+                    for name, field in zip(names, fields):
+                        all_factors[name] = field
+
+                    print(f"{handler_cls.__name__}: 添加了 {len(names)} 个因子")
+                except Exception as e:
+                    print(f"处理 {handler_cls.__name__} 时出错: {e}")
+            else:
+                print(f"警告: {handler_cls.__name__} 没有get_feature_config方法")
+
+    print(f"总共获取到 {len(all_factors)} 个因子")
     return all_factors
 
 
@@ -578,6 +956,119 @@ def check_and_generate_handler_csv(
         return df
 
 
+def get_mixed_handler_data(handlers):
+    """
+    分别计算不同handler的数据并合并
+
+    这是处理混合handler（如Alpha158DL + CustomFactor）的推荐方法
+
+    Returns:
+        pd.DataFrame: 合并后的因子数据
+    """
+    # 初始化qlib
+    qlib.init(region=REG_CN)
+
+    # 从配置文件读取参数
+    instruments, start_time, end_time = read_corr_params("handler_config.yaml")
+
+    combined_df = None
+
+    for handler_cls in handlers:
+        print(f"\n=== 处理 {handler_cls.__name__} ===")
+
+        try:
+            # 创建handler实例
+            handler = handler_cls(
+                instruments=instruments,
+                start_time=start_time,
+                end_time=end_time,
+            )
+
+            # 获取数据
+            df = handler.fetch()
+            print(f"获取到数据形状: {df.shape}")
+            print(f"列名: {list(df.columns)}")
+
+            # 合并数据
+            if combined_df is None:
+                combined_df = df
+            else:
+                # 确保索引一致后合并
+                combined_df, df = combined_df.align(df, join="inner", axis=0)
+                combined_df = pd.concat([combined_df, df], axis=1)
+
+            print(f"合并后数据形状: {combined_df.shape}")
+
+        except Exception as e:
+            print(f"处理 {handler_cls.__name__} 时出错: {e}")
+            continue
+
+    if combined_df is not None:
+        print(f"\n=== 最终合并结果 ===")
+        print(f"总数据形状: {combined_df.shape}")
+        print(f"时间范围: {combined_df.index.min()} 到 {combined_df.index.max()}")
+        print(f"总因子数: {len(combined_df.columns)}")
+
+        # 检查数据质量
+        print(f"\n数据质量检查:")
+        for col in combined_df.columns:
+            valid_ratio = combined_df[col].count() / len(combined_df) * 100
+            print(f"  {col}: {valid_ratio:.1f}% 有效数据")
+
+    return combined_df
+
+
+def compare_factor_corr_from_files(handler_csv_path, factor_csv_path, threshold=0.5):
+    """
+    从CSV文件读取数据并进行因子相关性分析
+
+    Args:
+        handler_csv_path (str): handler数据文件路径
+        factor_csv_path (str): 待分析因子数据文件路径
+        threshold (float): 相关性阈值
+    """
+    try:
+        # 读取数据
+        print("读取handler数据...")
+        handler_df = pd.read_csv(handler_csv_path, index_col=[0, 1], parse_dates=True)
+        print(f"Handler数据形状: {handler_df.shape}")
+
+        print("读取因子数据...")
+        factor_df = pd.read_csv(factor_csv_path, index_col=[0, 1], parse_dates=True)
+        print(f"因子数据形状: {factor_df.shape}")
+
+        # 对齐数据
+        handler_df, factor_df = handler_df.align(factor_df, join="inner", axis=0)
+        print(
+            f"对齐后数据形状 - Handler: {handler_df.shape}, Factor: {factor_df.shape}"
+        )
+
+        # 对每个输入的因子进行分析
+        for input_factor in factor_df.columns:
+            print(f"\n分析因子: {input_factor}")
+            print("-" * 50)
+
+            corrs = []
+            for handler_factor in handler_df.columns:
+                if handler_df[handler_factor].isnull().all():
+                    continue
+                corr = handler_df[handler_factor].corr(factor_df[input_factor])
+                if not pd.isna(corr):
+                    corrs.append((handler_factor, corr))
+
+            # 按相关性绝对值从大到小排序
+            corrs_sorted = sorted(corrs, key=lambda x: abs(x[1]), reverse=True)
+            # 输出前十
+            for col, corr in corrs_sorted[:10]:
+                if abs(corr) > threshold:
+                    print(f"【重点】{col}: 相关性={corr:.3f}")
+                else:
+                    print(f"{col}: 相关性={corr:.3f}")
+
+    except Exception as e:
+        print(f"相关性分析出错: {e}")
+
+
 def compare_factor_corr(factors, factor_csv_path, threshold=0.5):
     # 获取当前脚本所在目录
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -618,12 +1109,95 @@ def compare_factor_corr(factors, factor_csv_path, threshold=0.5):
                 print(f"{col}: 相关性={corr:.3f}")
 
 
-def calculate_and_validate_factors(expressions, cache_dir="cache"):
+def analyze_factors_with_mixed_handlers(expressions, cache_dir="cache"):
     """
-    计算因子值并进行验证。
+    使用混合handler方法分析因子（推荐方法）
+
+    这个方法专门处理包含Alpha158DL和CustomFactor的混合handler配置
 
     Args:
-        expressions (dict): 因子名称和表达式的字典
+        expressions (dict): 因子配置字典
+        cache_dir (str): 缓存目录路径
+    """
+    print("=== 使用混合Handler方法分析因子 ===")
+
+    # 读取配置参数
+    instruments, start_time, end_time = read_corr_params("handler_config.yaml")
+
+    # 初始化qlib
+    qlib.init(region=REG_CN)
+
+    # 创建因子计算器实例
+    calculator = FactorCalculator(expressions)
+
+    # 获取基础数据
+    base_fields = [
+        "$close",
+        "$volume",
+        "$open",
+        "$high",
+        "$low",
+    ]
+    df_base = D.features(instruments, base_fields, start_time, end_time)
+    df_base.columns = [
+        "close",
+        "volume",
+        "open",
+        "high",
+        "low",
+    ]
+
+    # 确保数据类型正确
+    for col in df_base.columns:
+        df_base[col] = df_base[col].astype(float)
+
+    # 计算待分析的因子
+    print(f"开始计算 {len(expressions)} 个待分析因子...")
+    results = calculator.calculate_all_factors(
+        df_base, instruments, start_time, end_time
+    )
+
+    # 合并因子结果
+    df_factors = pd.DataFrame(results)
+
+    # 验证和显示结果
+    print(f"\n=== 待分析因子计算结果 ===")
+    print(f"成功计算的因子数量: {len(df_factors.columns)}")
+    print(f"数据时间范围: {df_factors.index.min()} 到 {df_factors.index.max()}")
+    print(f"总数据点数: {len(df_factors)}")
+
+    # 保存待分析因子数据
+    os.makedirs(cache_dir, exist_ok=True)
+    factor_path = os.path.join(cache_dir, "factors.csv")
+    df_factors.to_csv(factor_path)
+    print(f"待分析因子数据已保存到: {factor_path}")
+
+    # 获取混合handler数据用于对比
+    print("\n=== 获取对比数据 ===")
+    handlers = load_handlers("handler_config.yaml")
+    handler_df = get_mixed_handler_data(handlers)
+
+    if handler_df is not None:
+        # 保存handler数据
+        handler_csv_path = os.path.join(cache_dir, "handler.csv")
+        handler_df.to_csv(handler_csv_path)
+        print(f"Handler数据已保存到: {handler_csv_path}")
+
+        # 进行相关性分析
+        print("\n=== 开始相关性分析 ===")
+        compare_factor_corr_from_files(handler_csv_path, factor_path)
+    else:
+        print("警告: 无法获取handler数据，跳过相关性分析")
+
+    return df_factors, handler_df
+
+
+def calculate_and_validate_factors(expressions, cache_dir="cache"):
+    """
+    计算因子值并进行验证。支持qlib表达式、talib函数和python代码。
+
+    Args:
+        expressions (dict): 因子配置字典，支持多种计算方式
         cache_dir (str): 缓存目录路径，默认为"cache"
     """
     # 读取配置参数
@@ -632,19 +1206,79 @@ def calculate_and_validate_factors(expressions, cache_dir="cache"):
     # 初始化qlib
     qlib.init(region=REG_CN)
 
-    # 获取因子数据
-    df = D.features(instruments, list(expressions.values()), start_time, end_time)
-    df.columns = expressions.keys()
+    # 创建因子计算器实例
+    calculator = FactorCalculator(expressions)
+
+    # 获取基础数据
+    base_fields = [
+        "$close",
+        "$volume",
+        "$open",
+        "$high",
+        "$low",
+    ]  # 根据需要添加基础字段
+    df_base = D.features(instruments, base_fields, start_time, end_time)
+    df_base.columns = [
+        "close",
+        "volume",
+        "open",
+        "high",
+        "low",
+    ]  # 重命名列以匹配talib输入要求
+
+    # 确保数据类型正确
+    for col in df_base.columns:
+        df_base[col] = df_base[col].astype(float)
+
+    # 使用批量计算功能统一计算所有因子
+    print(f"开始计算 {len(expressions)} 个因子...")
+    results = calculator.calculate_all_factors(
+        df_base, instruments, start_time, end_time
+    )
+
+    # 合并所有因子结果
+    df_factors = pd.DataFrame(results)
+
+    # 验证索引一致性并显示统计信息
+    print(f"\n=== 因子计算结果汇总 ===")
+    print(f"成功计算的因子数量: {len(df_factors.columns)}")
+    print(f"数据时间范围: {df_factors.index.min()} 到 {df_factors.index.max()}")
+    print(f"总数据点数: {len(df_factors)}")
+
+    # 检查索引一致性
+    if df_factors.index.equals(df_base.index):
+        print("✓ 所有因子索引与基础数据索引一致")
+    else:
+        print("⚠ 警告: 因子索引与基础数据索引不一致")
+
+    # 显示每个因子的有效数据比例
+    print("\n因子有效数据统计:")
+    for col in df_factors.columns:
+        valid_ratio = df_factors[col].count() / len(df_factors) * 100
+        print(f"  {col}: {valid_ratio:.1f}% 有效数据")
 
     # 保存因子数据
     os.makedirs(cache_dir, exist_ok=True)
     factor_path = os.path.join(cache_dir, "factors.csv")
-    df.to_csv(factor_path)
+    df_factors.to_csv(factor_path)
+    print(f"\n因子数据已保存到: {factor_path}")
 
     # 运行因子检验
-    compare_factor_corr(
-        get_all_factors(load_handlers("handler_config.yaml")), factor_path
-    )
+    # 使用新的混合handler处理方法
+    print("\n=== 开始因子相关性分析 ===")
+    handlers = load_handlers("handler_config.yaml")
+    handler_df = get_mixed_handler_data(handlers)
+
+    if handler_df is not None:
+        # 保存handler数据
+        handler_csv_path = os.path.join(cache_dir, "handler.csv")
+        handler_df.to_csv(handler_csv_path)
+        print(f"Handler数据已保存到: {handler_csv_path}")
+
+        # 进行相关性分析
+        compare_factor_corr_from_files(handler_csv_path, factor_path)
+    else:
+        print("警告: 无法获取handler数据，跳过相关性分析")
 
 
 if __name__ == "__main__":
