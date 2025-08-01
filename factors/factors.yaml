@@ -2081,7 +2081,6 @@
   formula: K = SMA(RSV, 3)，其中RSV = (收盘价 - 9日最低价) / (9日最高价 - 9日最低价) * 100
   tags: ["技术指标类", "动量指标", "随机振荡器"]
   metadata: ["$high", "$low", "$close"]
-
 - name: KDJ_D
   python_code: |
     # 计算KDJ指标的D值
@@ -2105,7 +2104,6 @@
   formula: D = SMA(K, 3)，其中K是快速随机指标
   tags: ["技术指标类", "动量指标", "随机振荡器"]
   metadata: ["$high", "$low", "$close"]
-
 - name: KDJ_J
   python_code: |
     # 计算KDJ指标的J值：J = 3*K - 2*D
@@ -2135,3 +2133,106 @@
   formula: J = 3*K - 2*D，其中K是快速随机指标，D是慢速随机指标
   tags: ["技术指标类", "动量指标", "随机振荡器", "超买超卖"]
   metadata: ["$high", "$low", "$close"]
+- name: OPEN_VOLATILITY_RATIO
+  qlib_expression: ($high - $low) / $open / Mean(($high - $low) / $open, 10)
+  source: custom_factor
+  description: 当前开盘波动率相对10日平均波动率的比率，用于判断当前波动率的异常程度
+  formula: 当前波动率 / 10日平均波动率
+  tags:
+    - 开盘策略
+    - 波动率
+    - 相对强度
+  metadata:
+    - $high
+    - $low
+    - $open
+    - window: 10
+- name: OPEN_GAP_MOMENTUM
+  qlib_expression: ($open - Ref($close, 1)) / Ref($close, 1) * Sign(Mean($close, 5) - Mean($close, 20))
+  source: custom_factor
+  description: 开盘缺口与趋势方向的复合动量指标，结合缺口大小和中期趋势方向
+  formula: 开盘缺口率 × 趋势方向信号
+  tags:
+    - 开盘策略
+    - 缺口策略
+    - 动量指标
+  metadata:
+    - $open
+    - $close
+    - window_short: 5
+    - window_long: 20
+- name: OPEN_RANGE_POSITION
+  qlib_expression: ($close - $open) / ($high - $low + 1e-12)
+  source: custom_factor
+  description: 收盘价在开盘区间内的相对位置，反映日内价格运动的偏向性
+  formula: (收盘价 - 开盘价) / (最高价 - 最低价)
+  tags:
+    - 开盘策略
+    - 日内策略
+    - 位置指标
+  metadata:
+    - $close
+    - $open
+    - $high
+    - $low
+- name: OPEN_BREAKOUT_STRENGTH
+  qlib_expression: Abs($close - $open) / Mean(($high - $low) / $open, 5) / $open
+  source: custom_factor
+  description: 开盘突破强度，衡量价格突破开盘价的程度相对于历史波动率
+  formula: "|收盘价 - 开盘价| / (5日平均波动率 × 开盘价)"
+  tags:
+    - 开盘策略
+    - 突破策略
+    - 强度指标
+  metadata:
+    - $close
+    - $open
+    - $high
+    - $low
+    - window: 5
+- name: OPEN_VOLATILITY_TREND
+  qlib_expression: Mean(($high - $low) / $open, 3) / Mean(($high - $low) / $open, 10)
+  source: custom_factor
+  description: 短期波动率相对长期波动率的趋势，用于判断波动率的变化方向
+  formula: 3日平均波动率 / 10日平均波动率
+  tags:
+    - 开盘策略
+    - 波动率
+    - 趋势指标
+  metadata:
+    - $high
+    - $low
+    - $open
+    - window_short: 3
+    - window_long: 10
+- name: OPEN_SESSION_MOMENTUM
+  qlib_expression: ($close - $open) / $open * $volume / Mean($volume, 5)
+  source: custom_factor
+  description: 开盘到收盘的动量与成交量加权，结合价格动量和成交量确认
+  formula: 开盘动量 × 成交量比率
+  tags:
+    - 开盘策略
+    - 动量指标
+    - 成交量确认
+  metadata:
+    - $close
+    - $open
+    - $volume
+    - window: 5
+- name: OPEN_BREAKOUT_CONFIRMATION
+  qlib_expression: Sign($close - $open) * ($close - $open) / ($high - $low + 1e-12) * $volume / Mean($volume, 10)
+  source: custom_factor
+  description: 开盘突破确认信号，结合价格突破和成交量确认，提供更可靠的突破信号
+  formula: 突破方向 × 突破强度 × 成交量确认
+  tags:
+    - 开盘策略
+    - 突破策略
+    - 确认信号
+  metadata:
+    - $close
+    - $open
+    - $high
+    - $low
+    - $volume
+    - window: 10
+

@@ -139,11 +139,16 @@ class CustomHandler(DataHandlerLP):
             - python_function: Python函数 (自定义函数类型)
         """
 
+        # 如果没有提供factors，尝试从factors.yaml文件加载
+        if factors is None:
+            factors = self._load_factors_from_yaml()
+
         # 解析因子配置
         self.factors = factors or []
         self.qlib_expressions = {}
         self.talib_configs = {}
         self.python_funcs = {}
+        self.python_codes = {}  # 新增：支持python_code字段
 
         self._parse_factors()
 
@@ -173,6 +178,32 @@ class CustomHandler(DataHandlerLP):
             data_loader=data_loader,
             **kwargs,
         )
+
+    def _load_factors_from_yaml(self):
+        """尝试从factors.yaml文件加载因子配置"""
+        import os
+
+        yaml_path = "factors/factors.yaml"
+
+        # 尝试多个可能的路径
+        possible_paths = [
+            yaml_path,
+            os.path.join(os.path.dirname(__file__), "factors.yaml"),
+            "factors.yaml",
+        ]
+
+        for path in possible_paths:
+            if os.path.exists(path):
+                try:
+                    factors = load_factors_from_yaml(path)
+                    print(f"从 {path} 加载了 {len(factors)} 个因子")
+                    return factors
+                except Exception as e:
+                    print(f"从 {path} 加载因子失败: {e}")
+                    continue
+
+        print("未找到factors.yaml文件，使用空因子列表")
+        return []
 
     def _parse_factors(self):
         """解析factors.yaml格式的因子配置"""
@@ -204,6 +235,14 @@ class CustomHandler(DataHandlerLP):
             # 自定义Python函数类型
             elif "python_function" in factor:
                 self.python_funcs[name] = factor["python_function"]
+
+            # 自定义Python代码类型
+            elif "python_code" in factor:
+                self.python_codes[name] = {
+                    "code": factor["python_code"],
+                    "inputs": factor.get("inputs", []),
+                    "outputs": factor.get("outputs", ["result"]),
+                }
 
     def _get_base_config(self):
         """获取基础数据配置(OHLCV等)"""
@@ -247,6 +286,9 @@ class CustomHandler(DataHandlerLP):
         # 添加自定义Python计算
         df = self._add_python_calculations(df)
 
+        # 添加自定义Python代码计算
+        df = self._add_python_code_calculations(df)
+
         # 过滤掉基础数据列，只保留计算出的因子
         factor_columns = self._get_factor_columns()
         if factor_columns:
@@ -257,6 +299,9 @@ class CustomHandler(DataHandlerLP):
             else:
                 # 如果没有找到任何因子列，返回空DataFrame但保持索引结构
                 df = df.iloc[:, 0:0]
+        else:
+            # 如果没有配置任何因子，返回空DataFrame但保持索引结构
+            df = df.iloc[:, 0:0]
 
         return df
 
@@ -272,6 +317,9 @@ class CustomHandler(DataHandlerLP):
 
         # Python函数因子
         factor_columns.extend(self.python_funcs.keys())
+
+        # Python代码因子
+        factor_columns.extend(self.python_codes.keys())
 
         return factor_columns
 
@@ -511,6 +559,85 @@ class CustomHandler(DataHandlerLP):
             )
         else:
             df = apply_python_to_group(df)
+
+        return df
+
+    def _add_python_code_calculations(self, df):
+        """添加自定义Python代码计算"""
+        if not self.python_codes:
+            return df
+
+        def apply_python_code_to_group(group_df):
+            """对单个股票应用Python代码"""
+            result_df = group_df.copy()
+
+            # 创建列名映射，去掉$前缀方便Python代码使用
+            clean_df = group_df.copy()
+            for col in group_df.columns:
+                if col.startswith("$"):
+                    clean_name = col[1:]  # 去掉$前缀
+                    clean_df = clean_df.rename(columns={col: clean_name})
+
+            for code_name, config in self.python_codes.items():
+                try:
+                    code = config["code"]
+                    inputs = config.get("inputs", [])
+                    outputs = config.get("outputs", ["result"])
+
+                    # 准备输入变量
+                    local_vars = {}
+
+                    # 添加基础数据
+                    for input_name in inputs:
+                        if input_name in clean_df.columns:
+                            # 保持pandas Series格式，但确保数据类型为float64
+                            local_vars[input_name] = clean_df[input_name].astype(
+                                np.float64
+                            )
+                        else:
+                            warnings.warn(
+                                f"Input column {input_name} not found for {code_name}"
+                            )
+                            continue
+
+                    # 添加data变量（用于索引）
+                    local_vars["data"] = clean_df
+
+                    # 执行Python代码
+                    exec(code, globals(), local_vars)
+
+                    # 获取输出结果
+                    for output_name in outputs:
+                        if output_name in local_vars:
+                            result = local_vars[output_name]
+                            if hasattr(result, "index"):
+                                # 如果是pandas Series，直接使用
+                                result_df[code_name] = result
+                            else:
+                                # 如果是numpy array，创建Series
+                                result_df[code_name] = pd.Series(
+                                    result, index=clean_df.index
+                                )
+                        else:
+                            warnings.warn(
+                                f"Output {output_name} not found in {code_name}"
+                            )
+
+                except Exception as e:
+                    warnings.warn(f"Failed to execute Python code {code_name}: {e}")
+                    import traceback
+
+                    print(f"Error details: {traceback.format_exc()}")
+
+            return result_df
+
+        # 按instrument分组应用Python代码
+        if "instrument" in df.index.names:
+            df = df.groupby(level="instrument", group_keys=False).apply(
+                apply_python_code_to_group
+            )
+        else:
+            df = apply_python_code_to_group(df)
 
         return df
 

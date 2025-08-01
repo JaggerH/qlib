@@ -949,9 +949,13 @@ def check_and_generate_handler_csv(
             )
         return convert_datetime_index(handler_df)
     except Exception as e:
-        qlib.init(region=REG_CN)
-        df = D.features(instruments, list(factors.values()), start_time, end_time)
-        df.columns = factors.keys()
+        print(f"重新生成handler.csv: {e}")
+        # 使用get_mixed_handler_data函数获取数据
+        from factors.custom_handler import CustomHandler
+        from qlib.contrib.data.loader import Alpha158DL
+
+        handlers = [Alpha158DL, CustomHandler]
+        df = get_mixed_handler_data(handlers)
         df.to_csv(handler_csv_path)
         return df
 
@@ -974,20 +978,37 @@ def get_mixed_handler_data(handlers):
     combined_df = None
 
     for handler_cls in handlers:
-        print(f"\n=== 处理 {handler_cls.__name__} ===")
-
         try:
-            # 创建handler实例
-            handler = handler_cls(
-                instruments=instruments,
-                start_time=start_time,
-                end_time=end_time,
-            )
+            # 创建handler实例 - 根据handler类型使用不同的初始化方式
+            if handler_cls.__name__ == "Alpha158DL":
+                # Alpha158DL 使用 config 参数初始化
+                handler = handler_cls(
+                    config={
+                        "feature": handler_cls.get_feature_config(),
+                    }
+                )
+            else:
+                # CustomHandler 等其他handler使用标准参数
+                handler = handler_cls(
+                    instruments=instruments,
+                    start_time=start_time,
+                    end_time=end_time,
+                )
 
-            # 获取数据
-            df = handler.fetch()
-            print(f"获取到数据形状: {df.shape}")
-            print(f"列名: {list(df.columns)}")
+            # 获取数据 - 根据handler类型使用不同的调用方式
+            if handler_cls.__name__ == "Alpha158DL":
+                # Alpha158DL 需要在fetch时传入参数
+                df = handler.load(
+                    instruments=instruments, start_time=start_time, end_time=end_time
+                )
+                # 处理Alpha158DL的MultiIndex列名，只保留因子名称
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(
+                        1
+                    )  # 只取第二层（因子名称）
+            else:
+                # CustomHandler 等其他handler直接调用fetch
+                df = handler.fetch()
 
             # 合并数据
             if combined_df is None:
@@ -997,23 +1018,9 @@ def get_mixed_handler_data(handlers):
                 combined_df, df = combined_df.align(df, join="inner", axis=0)
                 combined_df = pd.concat([combined_df, df], axis=1)
 
-            print(f"合并后数据形状: {combined_df.shape}")
-
         except Exception as e:
             print(f"处理 {handler_cls.__name__} 时出错: {e}")
             continue
-
-    if combined_df is not None:
-        print(f"\n=== 最终合并结果 ===")
-        print(f"总数据形状: {combined_df.shape}")
-        print(f"时间范围: {combined_df.index.min()} 到 {combined_df.index.max()}")
-        print(f"总因子数: {len(combined_df.columns)}")
-
-        # 检查数据质量
-        print(f"\n数据质量检查:")
-        for col in combined_df.columns:
-            valid_ratio = combined_df[col].count() / len(combined_df) * 100
-            print(f"  {col}: {valid_ratio:.1f}% 有效数据")
 
     return combined_df
 
@@ -1050,7 +1057,12 @@ def compare_factor_corr_from_files(handler_csv_path, factor_csv_path, threshold=
 
             corrs = []
             for handler_factor in handler_df.columns:
-                if handler_df[handler_factor].isnull().all():
+                # 安全地检查是否为全空值
+                try:
+                    if handler_df[handler_factor].isnull().all():
+                        continue
+                except ValueError:
+                    # 如果出现ValueError，跳过这个因子
                     continue
                 corr = handler_df[handler_factor].corr(factor_df[input_factor])
                 if not pd.isna(corr):
@@ -1094,7 +1106,12 @@ def compare_factor_corr(factors, factor_csv_path, threshold=0.5):
 
         corrs = []
         for handler_factor in handler_df.columns:
-            if handler_df[handler_factor].isnull().all():
+            # 安全地检查是否为全空值
+            try:
+                if handler_df[handler_factor].isnull().all():
+                    continue
+            except ValueError:
+                # 如果出现ValueError，跳过这个因子
                 continue
             corr = handler_df[handler_factor].corr(factor_df[input_factor])
             corrs.append((handler_factor, corr))
@@ -1264,21 +1281,9 @@ def calculate_and_validate_factors(expressions, cache_dir="cache"):
     print(f"\n因子数据已保存到: {factor_path}")
 
     # 运行因子检验
-    # 使用新的混合handler处理方法
-    print("\n=== 开始因子相关性分析 ===")
-    handlers = load_handlers("handler_config.yaml")
-    handler_df = get_mixed_handler_data(handlers)
-
-    if handler_df is not None:
-        # 保存handler数据
-        handler_csv_path = os.path.join(cache_dir, "handler.csv")
-        handler_df.to_csv(handler_csv_path)
-        print(f"Handler数据已保存到: {handler_csv_path}")
-
-        # 进行相关性分析
-        compare_factor_corr_from_files(handler_csv_path, factor_path)
-    else:
-        print("警告: 无法获取handler数据，跳过相关性分析")
+    compare_factor_corr(
+        get_all_factors(load_handlers("handler_config.yaml")), factor_path
+    )
 
 
 if __name__ == "__main__":
