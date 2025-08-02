@@ -23,7 +23,8 @@ from qlib.config import REG_CN
 qlib.init(region=REG_CN)
 
 from factors.factor_inspector import read_corr_params
-from factors.loader import CQilbDL
+from factors.loader import CQilbDL, CPyDL
+
 
 class TestLoader(unittest.TestCase):
 
@@ -42,6 +43,27 @@ class TestLoader(unittest.TestCase):
         )
 
         df = nd.load(instruments, start_time, end_time)
+        for column in df.columns:
+            self.assertEqual(column[0], "feature")
+
+        self.assertEqual(len(df.columns), len(names))
+
+    def test_CPyDL(self):
+        names = CPyDL.get_feature_config()
+        self.assertIsInstance(names, list)
+
+        instruments, start_time, end_time = read_corr_params()
+
+        nd = NestedDataLoader(
+            dataloader_l=[
+                {
+                    "class": "factors.loader.CPyDL",
+                },
+            ]
+        )
+
+        df = nd.load(instruments, start_time, end_time)
+        print(df)
         for column in df.columns:
             self.assertEqual(column[0], "feature")
 
