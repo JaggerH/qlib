@@ -104,14 +104,20 @@ class CPyDL(DLWParser):
 
     def _build_dlwparser_config(self):
         """构建DLWParser期望的配置格式"""
-        # 提取所有因子的名称
-        names = [factor["name"] for factor in self.factor_configs]
+        # 提取所有因子的输出名称
+        all_names = []
+        all_exprs = []
 
-        # 对于python_code因子，我们使用因子名称作为表达式
-        # 实际的代码执行在load_group_df中进行
-        exprs = names  # 使用名称作为占位符
+        for factor_config in self.factor_configs:
+            factor_name = factor_config["name"]
+            outputs = factor_config.get("outputs", ["result"])
 
-        return (exprs, names)
+            # 为每个输出创建一个表达式和名称
+            for output_name in outputs:
+                all_exprs.append(f"{factor_name}_{output_name}")
+                all_names.append(output_name)
+
+        return (all_exprs, all_names)
 
     @staticmethod
     def get_feature_config(yaml_path=None):
@@ -120,16 +126,18 @@ class CPyDL(DLWParser):
         temp_instance = CPyDL.__new__(CPyDL)
         python_code_factors = temp_instance._get_python_code_factors(yaml_path)
 
-        # 提取因子名称
-        names = [factor["name"] for factor in python_code_factors]
+        # 提取所有输出名称
+        all_names = []
+        for factor in python_code_factors:
+            outputs = factor.get("outputs", ["result"])
+            all_names.extend(outputs)
 
-        return names
+        return all_names
 
     def _load_base_data(self, instruments, start_time, end_time):
         """一次性加载所有基础数据"""
         # 收集所有因子需要的输入字段
         all_inputs = self._collect_all_factor_inputs()
-
         # 一次性加载所有基础数据
         base_df = D.features(instruments, all_inputs, start_time, end_time, freq="day")
 
@@ -154,13 +162,37 @@ class CPyDL(DLWParser):
 
         # 2. 执行因子计算
         factor_results = []
-        for name in names:
-            factor_config = self._get_factor_config_by_name(name)
-            result = self._execute_factor_with_base_data(factor_config, self._base_data)
-            factor_results.append(result)
+        factor_names = []
+
+        # 按因子分组处理
+        processed_factors = set()
+
+        for expr, name in zip(exprs, names):
+            # 从expr中提取因子名称（格式：factor_name_output_name）
+            factor_name = expr.split("_")[0]  # 取第一部分作为因子名
+
+            # 如果因子还没处理过，执行计算
+            if factor_name not in processed_factors:
+                current_factor_config = self._get_factor_config_by_name(factor_name)
+                all_results = self._execute_factor_with_base_data(
+                    current_factor_config, self._base_data
+                )
+
+                # 将结果按输出名称分组
+                outputs = current_factor_config.get("outputs", ["result"])
+                for output_name in outputs:
+                    if output_name in all_results:
+                        factor_results.append(all_results[output_name])
+                        factor_names.append(output_name)
+                    else:
+                        raise ValueError(
+                            f"Output '{output_name}' not found in factor {factor_name}"
+                        )
+
+                processed_factors.add(factor_name)
 
         # 3. 构建结果DataFrame
-        result_df = self._build_factor_results_df(factor_results, names)
+        result_df = self._build_factor_results_df(factor_results, factor_names)
 
         return result_df
 
@@ -187,18 +219,24 @@ class CPyDL(DLWParser):
         # 执行代码
         exec(compiled_code, exec_env)
 
-        # 4. 获取结果（假设结果变量名为result）
-        if "result" not in exec_env:
-            raise ValueError(
-                f"Factor {factor_name} did not produce a 'result' variable"
-            )
+        # 4. 获取所有输出结果
+        outputs = factor_config.get("outputs", ["result"])
+        results = {}
 
-        result = exec_env["result"]
+        for output_name in outputs:
+            if output_name not in exec_env:
+                raise ValueError(
+                    f"Factor {factor_name} did not produce a '{output_name}' variable"
+                )
 
-        # 5. 验证结果
-        self._validate_factor_output(result, factor_name)
+            result = exec_env[output_name]
 
-        return result
+            # 验证结果
+            self._validate_factor_output(result, f"{factor_name}_{output_name}")
+
+            results[output_name] = result
+
+        return results
 
     def _prepare_execution_environment(self, factor_input_data):
         """准备因子Python代码的执行环境"""

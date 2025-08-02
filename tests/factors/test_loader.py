@@ -63,7 +63,6 @@ class TestLoader(unittest.TestCase):
         )
 
         df = nd.load(instruments, start_time, end_time)
-        print(df)
         for column in df.columns:
             self.assertEqual(column[0], "feature")
 
