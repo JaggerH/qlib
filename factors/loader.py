@@ -57,7 +57,6 @@ class CPyDL(DLWParser):
         }
         if config is not None:
             _config.update(config)
-
         # 初始化基础数据缓存
         self._base_data = None
 
@@ -138,6 +137,11 @@ class CPyDL(DLWParser):
         """一次性加载所有基础数据"""
         # 收集所有因子需要的输入字段
         all_inputs = self._collect_all_factor_inputs()
+
+        # 处理instruments参数：如果是字符串，转换为D.instruments格式
+        if isinstance(instruments, str):
+            instruments = D.instruments(market=instruments)
+
         # 一次性加载所有基础数据
         base_df = D.features(instruments, all_inputs, start_time, end_time, freq="day")
 
