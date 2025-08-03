@@ -10,8 +10,9 @@ class CQilbDL(QlibDataLoader):
     """Dataloader to get CQilb"""
 
     def __init__(self, config=None, **kwargs):
+        self.yaml_path = kwargs.pop("yaml_path", None)
         _config = {
-            "feature": self.get_feature_config(),
+            "feature": self.get_feature_config(self.yaml_path),
         }
         if config is not None:
             _config.update(config)
@@ -45,8 +46,9 @@ class CPyDL(DLWParser):
     """Python Code DataLoader for custom factors with python_code"""
 
     def __init__(self, config=None, **kwargs):
+        self.yaml_path = kwargs.pop("yaml_path", None)
         # 解析YAML配置，获取所有python_code因子
-        self.factor_configs = self._parse_yaml_config()
+        self.factor_configs = self._parse_yaml_config(self.yaml_path)
 
         # 编译所有因子代码
         self._compile_all_factors()
@@ -131,7 +133,7 @@ class CPyDL(DLWParser):
             outputs = factor.get("outputs", ["result"])
             all_names.extend(outputs)
 
-        return all_names
+        return (all_names, all_names)
 
     def _load_base_data(self, instruments, start_time, end_time):
         """一次性加载所有基础数据"""
