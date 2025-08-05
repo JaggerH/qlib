@@ -2,11 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-CustomHandler测试用例
-
-测试方向：
-1. 使用handler.fetch()生成数据
-2. 使用DatasetH来生成数据
+loader测试用例
 
 测试内容：
 1. 验证从factors.yaml中读取的source为custom_factor的因子数和输出的因子数保持一致
