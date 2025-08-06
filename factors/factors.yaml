@@ -2151,4 +2151,42 @@
     - $low
     - $volume
     - window: 10
-
+- name: CDLMATHOLD
+  python_code: |
+    # 计算锤子线模式识别指标
+    hammer_values = talib.CDLMATHOLD(open, high, low, close)
+    CDLMATHOLD = pd.Series(hammer_values, index=open.index)
+  inputs: ["$open", "$high", "$low", "$close"]
+  outputs: ["CDLMATHOLD"]
+  source: custom_factor
+  description: 锤子线模式识别指标，用于识别K线图中的锤子线形态，通常表示潜在的底部反转信号
+  formula: 当K线形态符合锤子线特征时返回100，不符合时返回0，-100表示看跌锤子线
+  tags:
+    - 技术指标类
+    - 蜡烛图模式
+    - 反转信号
+  metadata: ["$open", "$high", "$low", "$close"]
+- name: INTRADAY_NEW_HIGH_COUNT
+  type: intraday_python_code
+  python_code: |
+    cum_max_high = high.cummax()
+    is_new_high = high > cum_max_high.shift(1).fillna(-np.inf)
+    result = is_new_high.sum()
+  inputs: ["$high"]
+  outputs: ["result"]
+  source: custom_factor
+  description: 累计日内突破前高的次数，用于衡量价格突破强度
+  formula: 对每个bar，若high大于此前所有bar的最高high，则累计加1
+  metadata: ["$high"]
+- name: INTRADAY_NEW_LOW_COUNT
+  type: intraday_python_code
+  python_code: |
+    cum_min_low = low.cummin()
+    is_new_low = low < cum_min_low.shift(1).fillna(np.inf)
+    result = is_new_low.sum()
+  inputs: ["$low"]
+  outputs: ["result"]
+  source: custom_factor
+  description: 累计日内突破前低的次数，用于衡量价格突破强度
+  formula: 对每个bar，若low小于此前所有bar的最低low，则累计加1
+  metadata: ["$low"]

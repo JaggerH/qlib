@@ -11,9 +11,16 @@ from factors.handler import CombineHandler, TestFactorHandler
 qlib.init(provider_uri="~/.qlib/qlib_data/cn_data", region=REG_CN)
 
 
-def read_corr_params(config_path=None):
+def read_corr_params(config_path=None, use_1min=False):
     """
     读取handler_config.yaml中的参数
+
+    参数:
+        config_path: 配置文件路径
+        use_1min: 是否返回corr_params_1min参数（True返回1min参数，False返回corr_params参数）
+
+    返回:
+        instruments, start_time, end_time
     """
     try:
         if config_path is None:
@@ -22,7 +29,10 @@ def read_corr_params(config_path=None):
             )
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
-        corr_params = config.get("corr_params", {})
+        if use_1min:
+            corr_params = config.get("corr_params_1min", {})
+        else:
+            corr_params = config.get("corr_params", {})
         required_fields = ["instruments", "start_time", "end_time"]
         for field in required_fields:
             if field not in corr_params:

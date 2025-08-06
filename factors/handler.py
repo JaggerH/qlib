@@ -6,7 +6,8 @@ from qlib.contrib.data.handler import (
 )
 from qlib.contrib.data.loader import Alpha158DL
 
-from factors.loader import CPyDL, CQilbDL
+from factors.loader import CPyDL, CQilbDL, CIntradayDL
+
 
 class CombineHandler(DataHandlerLP):
     def __init__(
@@ -156,6 +157,73 @@ class TestFactorHandler(DataHandlerLP):
         names = cpydl_names + cqilbdl_names
 
         return fields, names
+
+    def get_label_config(self):
+        return ["Ref($close, -2)/Ref($close, -1) - 1"], ["LABEL0"]
+
+
+class IntradayHandler(DataHandlerLP):
+
+    def __init__(
+        self,
+        instruments="csi500",
+        start_time=None,
+        end_time=None,
+        freq="1min",
+        infer_processors=[],
+        learn_processors=_DEFAULT_LEARN_PROCESSORS,
+        fit_start_time=None,
+        fit_end_time=None,
+        process_type=DataHandlerLP.PTYPE_A,
+        filter_pipe=None,
+        inst_processors=None,
+        **kwargs,
+    ):
+        infer_processors = check_transform_proc(
+            infer_processors, fit_start_time, fit_end_time
+        )
+        learn_processors = check_transform_proc(
+            learn_processors, fit_start_time, fit_end_time
+        )
+
+        data_loader = {
+            "class": "qlib.data.dataset.loader.NestedDataLoader",
+            "kwargs": {
+                "dataloader_l": [
+                    {
+                        "class": "factors.loader.CIntradayDL",
+                        "kwargs": {
+                            "config": {
+                                "label": kwargs.pop("label", self.get_label_config()),
+                            }
+                        },
+                    },
+                ],
+            },
+        }
+        super().__init__(
+            instruments=instruments,
+            start_time=start_time,
+            end_time=end_time,
+            data_loader=data_loader,
+            infer_processors=infer_processors,
+            learn_processors=learn_processors,
+            process_type=process_type,
+            **kwargs,
+        )
+
+    def get_feature_config(self):
+        conf = {
+            "kbar": {},
+            "price": {
+                "windows": [0],
+                "feature": ["OPEN", "HIGH", "LOW", "VWAP"],
+            },
+            "rolling": {},
+        }
+        cintraday_dl_fields, cintraday_dl_names = CIntradayDL.get_feature_config()
+
+        return cintraday_dl_fields, cintraday_dl_names
 
     def get_label_config(self):
         return ["Ref($close, -2)/Ref($close, -1) - 1"], ["LABEL0"]
