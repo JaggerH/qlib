@@ -50,6 +50,9 @@ class CombineHandler(DataHandlerLP):
                     {
                         "class": "factors.loader.CPyDL",
                     },
+                    {
+                        "class": "factors.loader.CIntradayDL",
+                    },
                 ],
             },
         }

@@ -1,5 +1,6 @@
 import os
 import yaml
+import warnings
 import pandas as pd
 import numpy as np
 from qlib.data.dataset.loader import QlibDataLoader, DLWParser
@@ -180,25 +181,40 @@ class CPyDL(DLWParser):
                 # 如果没有找到预期的后缀，使用原来的逻辑作为后备
                 factor_name = expr.split("_")[0]
 
-            # 如果因子还没处理过，执行计算
-            if factor_name not in processed_factors:
-                current_factor_config = self._get_factor_config_by_name(factor_name)
-                all_results = self._execute_factor_with_base_data(
-                    current_factor_config, self._base_data
-                )
+            # 判断是否为自定义因子
+            if self._is_custom_factor(factor_name):
+                # 如果因子还没处理过，执行计算
+                if factor_name not in processed_factors:
+                    current_factor_config = self._get_factor_config_by_name(factor_name)
+                    all_results = self._execute_factor_with_base_data(
+                        current_factor_config, self._base_data
+                    )
 
-                # 将结果按输出名称分组
-                outputs = current_factor_config.get("outputs", ["result"])
-                for output_name in outputs:
-                    if output_name in all_results:
-                        factor_results.append(all_results[output_name])
-                        factor_names.append(output_name)
-                    else:
-                        raise ValueError(
-                            f"Output '{output_name}' not found in factor {factor_name}"
-                        )
+                    # 将结果按输出名称分组
+                    outputs = current_factor_config.get("outputs", ["result"])
+                    for output_name in outputs:
+                        if output_name in all_results:
+                            factor_results.append(all_results[output_name])
+                            factor_names.append(output_name)
+                        else:
+                            raise ValueError(
+                                f"Output '{output_name}' not found in factor {factor_name}"
+                            )
 
-                processed_factors.add(factor_name)
+                    processed_factors.add(factor_name)
+            else:
+                # 处理标准qlib表达式（如标签表达式）
+                try:
+                    # 使用qlib的标准表达式计算
+                    result = self._calculate_qlib_expression(
+                        expr, instruments, start_time, end_time
+                    )
+                    factor_results.append(result)
+                    factor_names.append(name)
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to calculate qlib expression '{expr}': {str(e)}"
+                    )
 
         # 3. 构建结果DataFrame
         result_df = self._build_factor_results_df(factor_results, factor_names)
@@ -309,9 +325,42 @@ class CPyDL(DLWParser):
 
         return result_df
 
+    def _is_custom_factor(self, factor_name):
+        """判断是否为自定义因子"""
+        try:
+            self._get_factor_config_by_name(factor_name)
+            return True
+        except ValueError:
+            return False
+
+    def _calculate_qlib_expression(self, expr, instruments, start_time, end_time):
+        """
+        计算标准的qlib表达式（如标签表达式）
+
+        Args:
+            expr: qlib表达式字符串
+            instruments: 股票代码列表
+            start_time: 开始时间
+            end_time: 结束时间
+
+        Returns:
+            Series: 计算结果
+        """
+        # 使用qlib的D.features方法计算表达式
+        if instruments is None:
+            warnings.warn("`instruments` is not set, will load all stocks")
+            instruments = "all"
+        if isinstance(instruments, str):
+            instruments = D.instruments(instruments)
+        # CPyDL处理日频数据，所以使用day频率
+        result_df = D.features(instruments, [expr], start_time, end_time, freq="day")
+        # 提取第一列作为Series
+        result = result_df.iloc[:, 0]
+        return result
+
 
 class CIntradayDL(CPyDL):
-    """日内因子数据加载器"""
+    """日内数据加载器，支持自定义因子和标准qlib表达式"""
 
     def __init__(self, config=None, **kwargs):
         self.yaml_path = kwargs.pop("yaml_path", None)
@@ -357,12 +406,29 @@ class CIntradayDL(CPyDL):
         """一次性加载所有基础数据"""
         # 收集所有因子需要的输入字段
         all_inputs = self._collect_all_factor_inputs()
-        # 处理instruments参数：如果是字符串，转换为D.instruments格式
+        if instruments is None:
+            warnings.warn("`instruments` is not set, will load all stocks")
+            instruments = "all"
         if isinstance(instruments, str):
-            instruments = D.instruments(market=instruments)
+            instruments = D.instruments(instruments)
 
         # 一次性加载所有基础数据
         base_df = D.features(instruments, all_inputs, start_time, end_time, freq=freq)
+
+        # 检查数据是否为空
+        if base_df.empty:
+            raise ValueError(
+                f"数据为空！请检查以下参数：\n"
+                f"- instruments: {instruments}\n"
+                f"- start_time: {start_time}\n"
+                f"- end_time: {end_time}\n"
+                f"- freq: {freq}\n"
+                f"- all_inputs: {all_inputs}\n"
+                f"可能的原因：\n"
+                f"1. 指定的时间范围内没有数据\n"
+                f"2. 指定的股票代码不存在或已退市\n"
+                f"3. 数据源中没有对应的字段数据"
+            )
 
         # 按股票和日期分组：将同一股票同一日期的所有分钟数据聚合在一起
         # 从MultiIndex中提取股票代码和日期
@@ -397,26 +463,41 @@ class CIntradayDL(CPyDL):
                 # 如果没有找到预期的后缀，使用原来的逻辑作为后备
                 factor_name = expr.split("_")[0]
 
-            # 如果因子还没处理过，执行计算
-            if factor_name not in processed_factors:
-                current_factor_config = self._get_factor_config_by_name(factor_name)
-                all_results = self._execute_factor_with_base_data(
-                    current_factor_config, self._base_data
-                )
+            # 判断是否为自定义因子
+            if self._is_custom_factor(factor_name):
+                # 如果因子还没处理过，执行计算
+                if factor_name not in processed_factors:
+                    current_factor_config = self._get_factor_config_by_name(factor_name)
+                    all_results = self._execute_factor_with_base_data(
+                        current_factor_config, self._base_data
+                    )
 
-                # 将结果按输出名称分组
-                outputs = current_factor_config.get("outputs", ["result"])
-                for output_name in outputs:
-                    if output_name in all_results:
-                        factor_results.append(all_results[output_name])
-                        # 使用因子名称而不是输出名称
-                        factor_names.append(factor_name)
-                    else:
-                        raise ValueError(
-                            f"Output '{output_name}' not found in factor {factor_name}"
-                        )
+                    # 将结果按输出名称分组
+                    outputs = current_factor_config.get("outputs", ["result"])
+                    for output_name in outputs:
+                        if output_name in all_results:
+                            factor_results.append(all_results[output_name])
+                            # 使用因子名称而不是输出名称
+                            factor_names.append(factor_name)
+                        else:
+                            raise ValueError(
+                                f"Output '{output_name}' not found in factor {factor_name}"
+                            )
 
-                processed_factors.add(factor_name)
+                    processed_factors.add(factor_name)
+            else:
+                # 处理标准qlib表达式（如标签表达式）
+                try:
+                    # 使用qlib的标准表达式计算
+                    result = self._calculate_qlib_expression(
+                        expr, instruments, start_time, end_time
+                    )
+                    factor_results.append(result)
+                    factor_names.append(name)
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to calculate qlib expression '{expr}': {str(e)}"
+                    )
 
         # 3. 构建结果DataFrame
         result_df = self._build_factor_results_df(factor_results, factor_names)
@@ -609,8 +690,25 @@ class CIntradayDL(CPyDL):
 
         # 添加每个因子的结果
         for name, result in zip(names, factor_results):
-            # 重新索引，确保所有因子使用相同的索引
             result_reindexed = result.reindex(unified_index)
             result_df[name] = result_reindexed
+
+        # 优化：将'datetime'索引层转为字符串格式
+        try:
+            datetime_level = result_df.index.names.index("datetime")
+            datetime_values = result_df.index.get_level_values(datetime_level)
+            # 统一转为字符串格式
+            date_strs = pd.to_datetime(datetime_values).strftime("%Y-%m-%d")
+            # 构建新的 MultiIndex
+            new_index_arrays = [
+                date_strs if i == datetime_level else result_df.index.get_level_values(i)
+                for i in range(result_df.index.nlevels)
+            ]
+            result_df.index = pd.MultiIndex.from_arrays(
+                new_index_arrays, names=result_df.index.names
+            )
+        except (ValueError, KeyError, AttributeError):
+            # 没有'datetime'层或转换失败，直接返回
+            pass
 
         return result_df
