@@ -364,6 +364,9 @@ class CIntradayDL(CPyDL):
 
     def __init__(self, config=None, **kwargs):
         self.yaml_path = kwargs.pop("yaml_path", None)
+        # 添加RTH过滤参数
+        self.use_RTH = kwargs.pop("use_RTH", True)
+
         # 解析YAML配置，获取所有python_code因子
         self.factor_configs = self._get_python_code_factors(self.yaml_path)
 
@@ -402,7 +405,62 @@ class CIntradayDL(CPyDL):
 
         return python_code_factors
 
-    def _load_base_data(self, instruments, start_time, end_time, freq="1min"):
+    def _is_us_stock_minute_data(self):
+        """
+        判断是否为美股分钟数据
+
+        Returns:
+            bool: 是否为美股分钟数据
+        """
+
+        # 使用 qlib 的配置系统判断当前区域
+        from qlib.config import C
+        from qlib.constant import REG_US
+
+        return C.region == REG_US
+
+    def _filter_rth_data(self, df):
+        """
+        过滤RTH（Regular Trading Hours）数据
+
+        Args:
+            df: 包含datetime索引的DataFrame
+
+        Returns:
+            DataFrame: 过滤后的RTH数据
+        """
+        if df.empty:
+            return df
+
+        # 确保datetime是索引
+        if "datetime" not in df.index.names:
+            raise ValueError(
+                "DataFrame must have 'datetime' in index names for RTH filtering"
+            )
+
+        # 获取datetime列
+        datetime_index = df.index.get_level_values("datetime")
+
+        # 转换为pandas datetime（如果不是的话）
+        if not pd.api.types.is_datetime64_any_dtype(datetime_index):
+            datetime_index = pd.to_datetime(datetime_index)
+
+        # 提取时间部分
+        time_only = datetime_index.time
+
+        # 美股RTH时间：9:30 AM - 4:00 PM ET
+        rth_start = pd.Timestamp("09:30").time()
+        rth_end = pd.Timestamp("16:00").time()
+
+        # 创建RTH过滤条件
+        rth_mask = (time_only >= rth_start) & (time_only <= rth_end)
+
+        # 应用过滤
+        filtered_df = df[rth_mask]
+
+        return filtered_df
+
+    def _load_base_data(self, instruments, start_time, end_time, freq="5min"):
         """一次性加载所有基础数据"""
         # 收集所有因子需要的输入字段
         all_inputs = self._collect_all_factor_inputs()
@@ -429,6 +487,10 @@ class CIntradayDL(CPyDL):
                 f"2. 指定的股票代码不存在或已退市\n"
                 f"3. 数据源中没有对应的字段数据"
             )
+
+        # 检查是否为美股分钟数据且需要RTH过滤
+        if self.use_RTH and self._is_us_stock_minute_data():
+            base_df = self._filter_rth_data(base_df)
 
         # 按股票和日期分组：将同一股票同一日期的所有分钟数据聚合在一起
         # 从MultiIndex中提取股票代码和日期
@@ -701,7 +763,11 @@ class CIntradayDL(CPyDL):
             date_strs = pd.to_datetime(datetime_values).strftime("%Y-%m-%d")
             # 构建新的 MultiIndex
             new_index_arrays = [
-                date_strs if i == datetime_level else result_df.index.get_level_values(i)
+                (
+                    date_strs
+                    if i == datetime_level
+                    else result_df.index.get_level_values(i)
+                )
                 for i in range(result_df.index.nlevels)
             ]
             result_df.index = pd.MultiIndex.from_arrays(

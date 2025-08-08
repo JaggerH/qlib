@@ -10,9 +10,10 @@ loader测试用例
 3. 输出的结果中不能包含OHLCV等基础数据
 4. CIntradayDL测试：验证1min数据加载和按日期分组功能
 """
-
+import os
 from re import T
 import unittest
+from qlib.constant import REG_US
 from qlib.data.dataset.loader import NestedDataLoader
 import pandas as pd
 import numpy as np
@@ -82,16 +83,16 @@ class TestLoader(unittest.TestCase):
         qlib.init(
             provider_uri={
                 "day": "~/.qlib/qlib_data/cn_data",  # 日线数据
-                "1min": "~/.qlib/qlib_data/cn_data_1min",  # 1分钟数据
+                "5min": "~/.qlib/qlib_data/cn_data_5min",  # 1分钟数据
             },
             region="cn",
         )
 
-        # 使用1min数据实际存在的时间范围和股票
-        instruments, start_time, end_time = read_corr_params(use_1min=True)
+        # 使用5min数据实际存在的时间范围和股票
+        instruments, start_time, end_time = read_corr_params(use_min=True)
         intraday_dl = CIntradayDL()
         base_data = intraday_dl._load_base_data(
-            instruments, start_time, end_time, freq="1min"
+            instruments, start_time, end_time, freq="5min"
         )
         # 判断base_data是否为DataFrameGroupBy对象
         self.assertIsInstance(base_data, pd.core.groupby.generic.DataFrameGroupBy)
@@ -104,14 +105,14 @@ class TestLoader(unittest.TestCase):
         qlib.init(
             provider_uri={
                 "day": "~/.qlib/qlib_data/cn_data",  # 日线数据
-                "1min": "~/.qlib/qlib_data/cn_data_1min",  # 1分钟数据
+                "5min": "~/.qlib/qlib_data/cn_data_5min",  # 1分钟数据
             },
             region="cn",
         )
         fileds, names = CIntradayDL.get_feature_config()
         self.assertIsInstance(names, list)
 
-        instruments, start_time, end_time = read_corr_params(use_1min=True)
+        instruments, start_time, end_time = read_corr_params(use_min=True)
 
         nd = NestedDataLoader(
             dataloader_l=[
@@ -127,6 +128,39 @@ class TestLoader(unittest.TestCase):
 
         self.assertEqual(len(df.columns), len(names))
 
+    def test_CIntradayDL_RTH_filtering(self):
+        us_data_path = "~/.qlib/qlib_data/us_data_5min"
+        # 检查美股5分钟数据目录是否存在，不存在则跳过本测试
+        if not os.path.exists(os.path.expanduser(us_data_path)):
+            self.skipTest(f"{us_data_path} 不存在，跳过RTH过滤测试")
+
+        qlib.init(
+            provider_uri={
+                "5min": us_data_path,
+            },
+            region=REG_US,
+        )
+        fileds, names = CIntradayDL.get_feature_config()
+        self.assertIsInstance(names, list)
+
+        # instruments, start_time, end_time = read_corr_params(use_1min=True)
+        instruments = ["TSLA"]
+        start_time = "2020-01-01"
+        end_time = "2020-01-31"
+
+        nd = NestedDataLoader(
+            dataloader_l=[
+                {
+                    "class": "factors.loader.CIntradayDL",
+                },
+            ]
+        )
+
+        df = nd.load(instruments, start_time, end_time)
+        for column in df.columns:
+            self.assertEqual(column[0], "feature")
+
+        self.assertEqual(len(df.columns), len(names))
 
 if __name__ == "__main__":
     unittest.main()
