@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from qlib.data.dataset.loader import QlibDataLoader, DLWParser
 from qlib.data import D
+from qlib.data.data import ExpressionD
 
 
 class CQilbDL(QlibDataLoader):
@@ -138,6 +139,9 @@ class CPyDL(DLWParser):
         """一次性加载所有基础数据"""
         # 收集所有因子需要的输入字段
         all_inputs = self._collect_all_factor_inputs()
+        # 如果all_inputs为空，则直接返回空的DataFrame
+        if not all_inputs:
+            return pd.DataFrame()
 
         # 处理instruments参数：如果是字符串，转换为D.instruments格式
         if isinstance(instruments, str):
@@ -314,6 +318,12 @@ class CPyDL(DLWParser):
 
     def _build_factor_results_df(self, factor_results, names):
         """构建因子结果DataFrame"""
+        if not factor_results:
+            # 返回一个空的DataFrame，但具有MultiIndex（instrument, datetime）
+            index = pd.MultiIndex.from_arrays(
+                [[], []], names=["instrument", "datetime"]
+            )
+            return pd.DataFrame(index=index)
         # 确保所有结果具有相同的索引
         base_index = factor_results[0].index
 
@@ -331,6 +341,15 @@ class CPyDL(DLWParser):
             self._get_factor_config_by_name(factor_name)
             return True
         except ValueError:
+            return False
+
+    def _is_qlib_expression(self, expr):
+        try:
+            # 使用qlib官方的表达式验证方法
+            ExpressionD.get_expression_instance(expr)
+            return True
+        except (NameError, SyntaxError, ValueError):
+            # 如果qlib无法解析该表达式，则不是qlib表达式
             return False
 
     def _calculate_qlib_expression(self, expr, instruments, start_time, end_time):
@@ -363,7 +382,7 @@ class CIntradayDL(CPyDL):
     """日内数据加载器，支持自定义因子和标准qlib表达式"""
 
     def __init__(self, config=None, **kwargs):
-        self.yaml_path = kwargs.pop("yaml_path", None)
+        self.yaml_path = kwargs["yaml_path"]
         # 添加RTH过滤参数
         self.use_RTH = kwargs.pop("use_RTH", True)
 
@@ -464,6 +483,8 @@ class CIntradayDL(CPyDL):
         """一次性加载所有基础数据"""
         # 收集所有因子需要的输入字段
         all_inputs = self._collect_all_factor_inputs()
+        if not all_inputs:
+            return pd.DataFrame()
         if instruments is None:
             warnings.warn("`instruments` is not set, will load all stocks")
             instruments = "all"
@@ -495,7 +516,8 @@ class CIntradayDL(CPyDL):
         # 按股票和日期分组：将同一股票同一日期的所有分钟数据聚合在一起
         # 从MultiIndex中提取股票代码和日期
         instruments = base_df.index.get_level_values("instrument")
-        dates = base_df.index.get_level_values("datetime").date
+        # 保持datetime为pd.Timestamp类型，不转换为date
+        dates = base_df.index.get_level_values("datetime").normalize()
 
         # 使用股票和日期进行分组，保持原始的MultiIndex结构
         grouped_data = base_df.groupby([instruments, dates], group_keys=False)
@@ -517,16 +539,36 @@ class CIntradayDL(CPyDL):
         processed_factors = set()
 
         for expr, name in zip(exprs, names):
-            # 从expr中提取因子名称（格式：{factor_name}_{output_name}）
-            suffix = f"_{name}"
-            if expr.endswith(suffix):
-                factor_name = expr[: -len(suffix)]
+            # 判断表达式是否为qlib表达式
+            if self._is_qlib_expression(expr):
+                # 处理标准qlib表达式（如标签表达式）
+                try:
+                    # 使用qlib的标准表达式计算
+                    result = self._calculate_qlib_expression(
+                        expr, instruments, start_time, end_time
+                    )
+                    factor_results.append(result)
+                    factor_names.append(name)
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to calculate qlib expression '{expr}': {str(e)}"
+                    )
             else:
-                # 如果没有找到预期的后缀，使用原来的逻辑作为后备
-                factor_name = expr.split("_")[0]
+                # 处理自定义因子
+                # 从expr中提取因子名称（格式：{factor_name}_{output_name}）
+                suffix = f"_{name}"
+                if expr.endswith(suffix):
+                    factor_name = expr[: -len(suffix)]
+                else:
+                    # 如果没有找到预期的后缀，使用原来的逻辑作为后备
+                    factor_name = expr.split("_")[0]
 
-            # 判断是否为自定义因子
-            if self._is_custom_factor(factor_name):
+                # 检查因子是否存在
+                # if not self._is_custom_factor(factor_name):
+                #     raise ValueError(
+                #         f"Custom factor '{factor_name}' not found in configuration"
+                #     )
+
                 # 如果因子还没处理过，执行计算
                 if factor_name not in processed_factors:
                     current_factor_config = self._get_factor_config_by_name(factor_name)
@@ -547,19 +589,6 @@ class CIntradayDL(CPyDL):
                             )
 
                     processed_factors.add(factor_name)
-            else:
-                # 处理标准qlib表达式（如标签表达式）
-                try:
-                    # 使用qlib的标准表达式计算
-                    result = self._calculate_qlib_expression(
-                        expr, instruments, start_time, end_time
-                    )
-                    factor_results.append(result)
-                    factor_names.append(name)
-                except Exception as e:
-                    raise ValueError(
-                        f"Failed to calculate qlib expression '{expr}': {str(e)}"
-                    )
 
         # 3. 构建结果DataFrame
         result_df = self._build_factor_results_df(factor_results, factor_names)
@@ -612,9 +641,15 @@ class CIntradayDL(CPyDL):
         final_results = {}
         for output in outputs:
             if len(results[output]) > 0:
+                # 确保datetime是pd.Timestamp类型，以便与字符串进行比较
+                datetime_timestamps = [
+                    pd.Timestamp(date) if hasattr(date, "date") else date
+                    for date in dates_list
+                ]
                 # 创建MultiIndex
                 multi_index = pd.MultiIndex.from_arrays(
-                    [instruments_list, dates_list], names=["instrument", "datetime"]
+                    [instruments_list, datetime_timestamps],
+                    names=["instrument", "datetime"],
                 )
                 # 创建Series，使用MultiIndex
                 final_results[output] = pd.Series(
@@ -660,7 +695,7 @@ class CIntradayDL(CPyDL):
 
     @staticmethod
     def get_feature_config(yaml_path=None):
-        """获取CPyDL的特征配置"""
+        """获取CIntradayDL的特征配置"""
         # 创建临时实例来调用通用函数
         temp_instance = CIntradayDL.__new__(CIntradayDL)
         python_code_factors = temp_instance._get_python_code_factors(yaml_path)
@@ -754,27 +789,5 @@ class CIntradayDL(CPyDL):
         for name, result in zip(names, factor_results):
             result_reindexed = result.reindex(unified_index)
             result_df[name] = result_reindexed
-
-        # 优化：将'datetime'索引层转为字符串格式
-        try:
-            datetime_level = result_df.index.names.index("datetime")
-            datetime_values = result_df.index.get_level_values(datetime_level)
-            # 统一转为字符串格式
-            date_strs = pd.to_datetime(datetime_values).strftime("%Y-%m-%d")
-            # 构建新的 MultiIndex
-            new_index_arrays = [
-                (
-                    date_strs
-                    if i == datetime_level
-                    else result_df.index.get_level_values(i)
-                )
-                for i in range(result_df.index.nlevels)
-            ]
-            result_df.index = pd.MultiIndex.from_arrays(
-                new_index_arrays, names=result_df.index.names
-            )
-        except (ValueError, KeyError, AttributeError):
-            # 没有'datetime'层或转换失败，直接返回
-            pass
 
         return result_df

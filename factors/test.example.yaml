@@ -1,0 +1,41 @@
+- name: INTRADAY_RET_CORR
+  qlib_expression: Corr(Div(Sub($high, $low), $open), $close/Ref($close, 1)
+    - 1, 5)
+  source: custom_factor
+  description: 日内价格波动率与收益率的相关系数
+  formula: 日内价格波动率与收益率的相关系数
+  tags:
+  - 量价关系类
+  - 相关性
+  metadata:
+  - $high
+  - $low
+  - $open
+  - $close
+- name: OBV
+  python_code: |
+    # 计算On Balance Volume (OBV)指标
+    OBV = talib.OBV(close, volume)
+    OBV = pd.Series(OBV, index=close.index)
+  inputs: ["$close", "$volume"]
+  outputs: ["OBV"]
+  source: custom_factor
+  description: On Balance Volume (OBV)指标，通过累积成交量来衡量价格趋势的强弱，当收盘价上涨时累加成交量，下跌时减去成交量
+  formula: 当日收盘价>前日收盘价，OBV = 前日OBV + 当日成交量；当日收盘价<前日收盘价，OBV = 前日OBV - 当日成交量；当日收盘价=前日收盘价，OBV = 前日OBV
+  tags: [量价类, 趋势类, 成交量]
+  metadata: [$close, $volume]
+- name: KDJ
+  python_code: |
+    # 计算KDJ指标的K、D、J值
+    k_values, d_values = talib.STOCH(high, low, close)
+    j_values = 3 * k_values - 2 * d_values
+
+    KDJ_K = pd.Series(k_values, index=high.index)
+    KDJ_D = pd.Series(d_values, index=high.index)
+    KDJ_J = pd.Series(j_values, index=high.index)
+  inputs: ["$high", "$low", "$close"]
+  outputs: ["KDJ_K", "KDJ_D", "KDJ_J"]
+  source: custom_factor
+  description: KDJ指标，快速随机指标，使用9日RSV的3日移动平均，用于判断价格动量的强弱
+  formula: K = SMA(RSV, 3)，其中RSV = (收盘价 - 9日最低价) / (9日最高价 - 9日最低价) * 100
+  metadata: ["$high", "$low", "$close"]
