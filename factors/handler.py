@@ -131,6 +131,10 @@ class TestFactorHandler(DataHandlerLP):
                         "class": "factors.loader.CPyDL",
                         "kwargs": {"yaml_path": self.yaml_path},
                     },
+                    {
+                        "class": "factors.loader.CIntradayDL",
+                        "kwargs": {"yaml_path": self.yaml_path},
+                    },
                 ],
             },
         }

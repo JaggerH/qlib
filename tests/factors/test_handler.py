@@ -17,18 +17,17 @@ import unittest
 import qlib
 from qlib.config import REG_CN
 
-# qlib.init(region=REG_CN)
-
 from qlib.utils import init_instance_by_config
+from factors.factor_inspector import read_corr_params
 
 
-class TestLoader(unittest.TestCase):
+class TestHandler(unittest.TestCase):
 
     def test_CombineHandler(self):
         qlib.init(
             provider_uri={
                 "day": "~/.qlib/qlib_data/cn_data",  # 日线数据
-                "1min": "~/.qlib/qlib_data/cn_data_1min",  # 1分钟数据
+                "5min": "~/.qlib/qlib_data/cn_data_5min",  # 1分钟数据
             },
             region=REG_CN,
         )
@@ -62,14 +61,16 @@ class TestLoader(unittest.TestCase):
         dataset = init_instance_by_config(dataset)
 
     def test_IntradayHandler(self):
+        instruments, start_time, end_time = read_corr_params()
+
         qlib.init(
             provider_uri={
                 "day": "~/.qlib/qlib_data/cn_data",  # 日线数据
-                "1min": "~/.qlib/qlib_data/cn_data_1min",  # 1分钟数据
+                "5min": "~/.qlib/qlib_data/cn_data_5min",  # 1分钟数据
             },
             region=REG_CN,
         )
-        market = "csi300"
+        market = instruments
 
         data_handler_config = {
             "start_time": "2020-09-15",

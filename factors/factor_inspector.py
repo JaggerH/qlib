@@ -8,16 +8,22 @@ from qlib.data import D
 from qlib.config import REG_CN
 from factors.handler import CombineHandler, TestFactorHandler
 
-qlib.init(provider_uri="~/.qlib/qlib_data/cn_data", region=REG_CN)
+qlib.init(
+    provider_uri={
+        "day": "~/.qlib/qlib_data/cn_data",
+        "5min": "~/.qlib/qlib_data/cn_data_5min",
+    },
+    region=REG_CN,
+)
 
 
-def read_corr_params(config_path=None, use_1min=False):
+def read_corr_params(config_path=None, use_min=False):
     """
     读取handler_config.yaml中的参数
 
     参数:
         config_path: 配置文件路径
-        use_1min: 是否返回corr_params_1min参数（True返回1min参数，False返回corr_params参数）
+        use_min: 是否返回corr_params_1min参数（True返回1min参数，False返回corr_params参数）
 
     返回:
         instruments, start_time, end_time
@@ -29,7 +35,7 @@ def read_corr_params(config_path=None, use_1min=False):
             )
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
-        if use_1min:
+        if use_min:
             corr_params = config.get("corr_params_1min", {})
         else:
             corr_params = config.get("corr_params", {})
@@ -90,6 +96,7 @@ def generate_handler_csv(handler_csv_path="cache/handler.csv"):
         handler = CombineHandler(**config)
         df = handler.fetch(col_set="feature")
         df.to_csv(handler_csv_path)
+        return df
 
 
 def generate_factor_csv(handler_yaml_path, factor_csv_path="cache/factor.csv"):
@@ -98,6 +105,7 @@ def generate_factor_csv(handler_yaml_path, factor_csv_path="cache/factor.csv"):
     handler = TestFactorHandler(**config)
     df = handler.fetch(col_set="feature")
     df.to_csv(factor_csv_path)
+    return df
 
 
 def compare_factor_corr_from_files(

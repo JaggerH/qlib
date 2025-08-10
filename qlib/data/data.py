@@ -389,6 +389,13 @@ class ExpressionProvider(abc.ABC):
     def __init__(self):
         self.expression_instance_cache = {}
 
+    def check_expression(self, field):
+        try:
+            expression = eval(parse_field(field))
+            return True
+        except (NameError, SyntaxError):
+            return False
+
     def get_expression_instance(self, field):
         try:
             if field in self.expression_instance_cache:
