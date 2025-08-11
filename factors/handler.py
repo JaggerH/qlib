@@ -176,7 +176,7 @@ class IntradayHandler(DataHandlerLP):
         instruments="csi500",
         start_time=None,
         end_time=None,
-        freq="1min",
+        freq="day",
         infer_processors=[],
         learn_processors=_DEFAULT_LEARN_PROCESSORS,
         fit_start_time=None,

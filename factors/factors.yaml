@@ -2011,9 +2011,7 @@
   metadata: [$close, $volume]
 - name: ADX
   python_code: |
-    # 计算Average Directional Index (ADX) 14日指标
     ADX = talib.ADX(high, low, close, timeperiod=14)
-    ADX = pd.Series(ADX, index=close.index)
   inputs: ["$high", "$low", "$close"]
   outputs: ["ADX"]
   source: custom_factor
@@ -2154,10 +2152,9 @@
 - name: CDLMATHOLD
   python_code: |
     # 计算锤子线模式识别指标
-    hammer_values = talib.CDLMATHOLD(open, high, low, close)
-    CDLMATHOLD = pd.Series(hammer_values, index=open.index)
+    result = talib.CDLMATHOLD(open, high, low, close)
   inputs: ["$open", "$high", "$low", "$close"]
-  outputs: ["CDLMATHOLD"]
+  outputs: ["result"]
   source: custom_factor
   description: 锤子线模式识别指标，用于识别K线图中的锤子线形态，通常表示潜在的底部反转信号
   formula: 当K线形态符合锤子线特征时返回100，不符合时返回0，-100表示看跌锤子线

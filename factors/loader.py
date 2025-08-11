@@ -568,7 +568,7 @@ class CIntradayDL(BasePyDL):
 
     def _get_qlib_expression_freq(self):
         """获取qlib表达式的频率 - 日内数据"""
-        return "5min"
+        return "day"
 
     def _build_factor_results_df(self, factor_results, names):
         """
