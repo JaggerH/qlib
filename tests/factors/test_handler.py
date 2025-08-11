@@ -24,6 +24,8 @@ from factors.factor_inspector import read_corr_params
 class TestHandler(unittest.TestCase):
 
     def test_CombineHandler(self):
+        instruments, start_time, end_time = read_corr_params()
+
         qlib.init(
             provider_uri={
                 "day": "~/.qlib/qlib_data/cn_data",  # 日线数据
@@ -31,7 +33,7 @@ class TestHandler(unittest.TestCase):
             },
             region=REG_CN,
         )
-        market = "csi300"
+        market = instruments
 
         data_handler_config = {
             "start_time": "2020-09-15",
@@ -51,14 +53,17 @@ class TestHandler(unittest.TestCase):
                     "kwargs": data_handler_config,
                 },
                 "segments": {
-                    "train": ("2020-09-15", "2020-10-01"),
-                    "valid": ("2020-10-02", "2020-10-15"),
-                    "test": ("2020-10-16", "2020-10-31"),
+                    "train": ("2020-09-15", "2020-12-01"),
+                    "valid": ("2020-12-02", "2021-01-01"),
+                    "test": ("2020-01-02", "2021-03-01"),
                 },
             },
         }
 
         dataset = init_instance_by_config(dataset)
+        df = dataset.prepare("train")
+        print(df[["ADX", "KDJ_J", "INTRADAY_NEW_HIGH_COUNT"]].head())
+        print(df[["ADX", "KDJ_J", "INTRADAY_NEW_HIGH_COUNT"]].tail())
 
     def test_IntradayHandler(self):
         instruments, start_time, end_time = read_corr_params()
