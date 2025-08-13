@@ -401,6 +401,11 @@ class CPyDL(BasePyDL):
             index=base_index,
         )
 
+        # 强制转换数值列为float32类型，避免精度问题
+        numeric_columns = result_df.select_dtypes(include=[np.number]).columns
+        if len(numeric_columns) > 0:
+            result_df[numeric_columns] = result_df[numeric_columns].astype(np.float32)
+
         return result_df
 
 
@@ -608,5 +613,10 @@ class CIntradayDL(BasePyDL):
         for name, result in zip(names, factor_results):
             result_reindexed = result.reindex(unified_index)
             result_df[name] = result_reindexed
+
+        # 强制转换数值列为float32类型，避免精度问题
+        numeric_columns = result_df.select_dtypes(include=[np.number]).columns
+        if len(numeric_columns) > 0:
+            result_df[numeric_columns] = result_df[numeric_columns].astype(np.float32)
 
         return result_df
