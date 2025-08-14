@@ -2187,3 +2187,41 @@
   description: 累计日内突破前低的次数，用于衡量价格突破强度
   formula: 对每个bar，若low小于此前所有bar的最低low，则累计加1
   metadata: ["$low"]
+- name: INTRADAY_VWAP
+  type: intraday_python_code
+  python_code: |
+    typical_price = (high + low + close) / 3
+    sum_price_vol = (typical_price * volume).sum()
+    total_vol = volume.sum()
+    DAILY_VWAP = sum_price_vol / total_vol if total_vol > 0 else np.nan
+
+    CLOSE_TO_VWAP_DIFF_PCT = (close.iloc[-1] - DAILY_VWAP) / DAILY_VWAP if DAILY_VWAP and not np.isnan(DAILY_VWAP) else np.nan
+  inputs: ["$high", "$low", "$close", "$volume"]
+  outputs: ["DAILY_VWAP", "CLOSE_TO_VWAP_DIFF_PCT"]
+  source: custom_factor
+  description: 计算日内VWAP（成交量加权平均价）及收盘价相对VWAP的偏离百分比，用于衡量收盘价与成交量加权均价的关系
+  formula: VWAP = ∑(typical_price × volume) / ∑volume；CLOSE_TO_VWAP_DIFF_PCT = (收盘价 - VWAP) / VWAP
+  metadata: ["$high", "$low", "$close", "$volume"]
+- name: INTRADAY_EXTREME_BAR_COUNT
+  type: intraday_python_code
+  python_code: |
+    is_extreme = close.pct_change() > 0.01
+    extreme_bar_count = is_extreme.sum()
+  inputs: ["$close"]
+  outputs: ["extreme_bar_count"]
+  source: custom_factor
+  description: 计算日内收盘价相对前一分钟的偏离百分比大于1%的次数，用于衡量日内价格波动强度
+  formula: 对每个bar，若收盘价相对前一分钟的偏离百分比大于1%，则累计加1
+  metadata: ["$close"]
+- name: INTRADAY_HL_TIME_DIFF
+  type: intraday_python_code
+  python_code: |
+    high_time = high.idxmax()[1]
+    low_time = low.idxmin()[1]
+    time_diff = abs((high_time - low_time).total_seconds()) / 60.0
+  inputs: ["$high", "$low"]
+  outputs: ["time_diff"]
+  source: custom_factor
+  description: 计算日内最高价和最低价的时间差，用于衡量日内价格波动强度
+  formula: time_diff = abs(high_time - low_time)（单位：分钟）
+  metadata: ["$high", "$low"]
