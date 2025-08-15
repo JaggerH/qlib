@@ -329,9 +329,7 @@ class CPyDL(BasePyDL):
         """获取CPyDL的特征配置"""
         # 创建临时实例来调用通用函数
         temp_instance = CPyDL(yaml_path=yaml_path)
-        all_names = temp_instance.fields["feature"][0]
-
-        return (all_names, all_names)
+        return temp_instance.fields["feature"]
 
     def _execute_factor_with_base_data(self, factor_config, base_data):
         """使用预加载的基础数据执行单个因子计算"""
@@ -433,8 +431,7 @@ class CIntradayDL(BasePyDL):
         """获取CIntradayDL的特征配置"""
         # 创建临时实例来调用通用函数
         temp_instance = CIntradayDL(yaml_path=yaml_path)
-        all_names = temp_instance.fields["feature"][0]
-        return (all_names, all_names)
+        return temp_instance.fields["feature"]
 
     def _is_us_stock_minute_data(self):
         """

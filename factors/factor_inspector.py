@@ -166,7 +166,11 @@ def main():
     """
     parser = argparse.ArgumentParser(description="因子相关性分析工具")
     parser.add_argument(
-        "--factor_yaml", type=str, required=True, help="指定因子参数的yaml文件路径"
+        "--factor_yaml",
+        type=str,
+        # required=True,
+        default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "test.yaml"),
+        help="指定因子参数的yaml文件路径"
     )
     parser.add_argument(
         "--handler_csv",
