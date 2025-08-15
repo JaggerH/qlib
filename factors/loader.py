@@ -35,14 +35,51 @@ class CQilbDL(QlibDataLoader):
             {
                 "name": factor["name"],
                 "field": factor["qlib_expression"],
+                "period": factor.get("period", None),
             }
             for factor in factors
             if factor.get("source") == "custom_factor" and "qlib_expression" in factor
         ]
 
-        names = [factor["name"] for factor in factors]
-        fields = [factor["field"] for factor in factors]
+        fields, names = [], []
+        for factor in factors:
+            if factor["period"] is not None:
+                _fields, _names = CQilbDL._process_period_factor(factor, factor["period"])
+                fields.extend(_fields)
+                names.extend(_names)
+            else:
+                fields.append(factor["field"])
+                names.append(factor["name"])
+
         return fields, names
+
+    @staticmethod
+    def _process_period_factor(factor, period_config):
+        """
+        处理带周期参数的因子，生成多个周期的因子变体
+
+        Args:
+            factor: 原始因子配置
+            period_config: 周期配置，可以是字符串或列表
+
+        Returns:
+            list: 处理后的因子列表
+        """
+        _fields, _names = [], []
+        base_name = factor["name"]
+        base_expression = factor["field"]
+        periods = period_config if period_config != "DEFAULT" else [5, 10, 20, 30]
+
+        for period in periods:
+            if not isinstance(period, int):
+                warnings.warn(f"Factor: {base_name} Period value {period} is not an integer, skipping...")
+                continue
+
+            processed_expression = base_expression.replace("{period}", str(period))
+            _fields.append(processed_expression)
+            _names.append(f"{base_name}_{period}")
+
+        return _fields, _names
 
 
 class BasePyDL(DLWParser):

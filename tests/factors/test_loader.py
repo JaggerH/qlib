@@ -35,9 +35,33 @@ from factors.factor_inspector import read_corr_params
 from factors.loader import CQilbDL, CPyDL, CIntradayDL
 
 
-class TestLoader(unittest.TestCase):
+class TestCQilbDL(unittest.TestCase):
 
-    def test_CQilbDL(self):
+    def test_CQilbDL_get_feature_config(self):
+        # 创建一个临时文件，并写入EMA的自定义因子配置
+        ema_factor = {
+            "name": "EMA_TEST",
+            "source": "custom_factor",
+            "qlib_expression": "EMA($close, {period})",
+            "period": "DEFAULT",
+            "description": "10日指数移动平均线",
+            "metadata": ["$close"],
+        }
+        with tempfile.NamedTemporaryFile(delete=False, mode="w", encoding="utf-8") as tmp_file:
+            temp_path = tmp_file.name
+            yaml.dump([ema_factor], tmp_file, allow_unicode=True)
+        try:
+            fields, names = CQilbDL.get_feature_config(yaml_path=temp_path)
+            self.assertEqual(len(fields), len(names))
+            self.assertEqual(fields[0], "EMA($close, 5)")
+            self.assertEqual(names[0], "EMA_TEST_5")
+            self.assertEqual(len(fields), 4)
+        finally:
+            # 删除临时文件
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def test_CQilbDL_load(self):
         names, fields = CQilbDL.get_feature_config()
         self.assertEqual(len(names), len(fields))
 

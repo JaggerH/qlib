@@ -13,6 +13,7 @@ handler主要用于workflow中DataSet的加载
 """
 
 import unittest
+import os
 
 import qlib
 from qlib.config import REG_CN
@@ -220,6 +221,28 @@ class TestHandler(unittest.TestCase):
                 max_val, 10, f"因子 {factor} 的最大值应该 <= 3，实际是 {max_val}"
             )
 
+    def test_TestFactorHandler(self):
+        instruments, start_time, end_time = read_corr_params()
+        qlib.init(
+            provider_uri={
+                "day": "~/.qlib/qlib_data/cn_data",  # 日线数据
+                "5min": "~/.qlib/qlib_data/cn_data_5min",  # 1分钟数据
+            },
+            region=REG_CN,
+        )
+        market = instruments
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        data_handler_config = {
+            "start_time": "2020-09-15",
+            "end_time": "2020-10-01",
+            "instruments": market,
+            "yaml_path": os.path.join(current_dir, "../../factors/test.example.yaml"),
+        }
+        from factors.handler import TestFactorHandler
+        handler = TestFactorHandler(**data_handler_config)
+        df = handler.fetch(col_set="feature")
+        print(df)
 
 if __name__ == "__main__":
     unittest.main()
